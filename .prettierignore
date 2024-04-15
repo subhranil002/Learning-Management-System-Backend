@@ -1,0 +1,14 @@
+# Ignore all files in the node_modules directory
+node_modules/*
+
+# Ignore compiled files
+dist/*
+build/*
+
+# Ignore coverage reports
+coverage/*
+
+# Ignore ENV files
+*.env
+.env
+.env.*
