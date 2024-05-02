@@ -235,6 +235,92 @@ const resetPassword = async (req, res, next) => {
     }
 };
 
+const changePassword = async (req, res, next) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+        const userId = req.user.id;
+
+        if (!oldPassword || !newPassword) {
+            return next(new AppError("All fields are required", 400));
+        }
+
+        const user = await User.findById(userId).select("+password");
+
+        if (!user.comparePassword(oldPassword)) {
+            return next(new AppError("Old password does not match", 400));
+        }
+
+        user.password = newPassword;
+        await user.save();
+
+        user.password = undefined;
+
+        res.status(200).json({
+            success: true,
+            message: "Password Changed Successfully",
+            user,
+        });
+    } catch (error) {
+        return next(new AppError(error.message, 500));
+    }
+};
+
+const updateUser = async (req, res, next) => {
+    try {
+        const { fullName } = req.body;
+        const userId = req.user.id;
+
+        const user = await User.findById(userId);
+
+        if (fullName) {
+            user.fullName = fullName;
+        }
+
+        if (req.file) {
+            await cloudinary.v2.uploader.destroy(user.avtar.public_id);
+
+            try {
+                const result = await cloudinary.v2.uploader.upload(
+                    req.file.path,
+                    {
+                        folder: "lms",
+                        width: 250,
+                        height: 250,
+                        gravity: "faces",
+                        crop: "fill",
+                        resource_type: "image",
+                    }
+                );
+
+                fs.rm(`../uploads/${req.file.filename}`);
+
+                if (result) {
+                    user.avtar.public_id = result.public_id;
+                    user.avtar.secure_url = result.secure_url;
+                }
+            } catch (error) {
+                fs.rm(`../uploads/${req.file.filename}`);
+                return next(
+                    new AppError(
+                        error.message || "File not uploaded, please try again",
+                        500
+                    )
+                );
+            }
+        }
+
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: "User details updated successfully",
+            user,
+        });
+    } catch (error) {
+        return next(new AppError(error.message, 500));
+    }
+};
+
 export {
     register,
     login,
@@ -242,4 +328,6 @@ export {
     getProfile,
     forgotPassword,
     resetPassword,
+    changePassword,
+    updateUser,
 };
