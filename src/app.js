@@ -6,6 +6,7 @@ import { config } from "dotenv";
 config();
 import morgan from "morgan";
 import userRoutes from "./routes/user.routes.js";
+import courseRoutes from "./routes/course.route.js";
 import errorMiddleWare from "./middlewares/error.middleware.js";
 import connectionToDb from "./config/dbConnection.js";
 connectionToDb();
@@ -31,6 +32,7 @@ app.use("/ping", (req, res) => {
 });
 
 app.use("/api/v1/user", userRoutes);
+app.use("/api/v1/course", courseRoutes);
 app.use(errorMiddleWare);
 
 app.all("*", (req, res) => {
