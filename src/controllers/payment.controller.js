@@ -90,3 +90,55 @@ const verifySubscription = async (req, res, next) => {
         return next(new AppError(error.message, 500));
     }
 };
+
+const cancelSubscription = async (req, res, next) => {
+    try {
+        const id = req.user.id;
+
+        const user = await User.findById(id);
+
+        if (user.role === "ADMIN") {
+            return next(
+                new AppError("Admin cannot purchase a subscription", 400)
+            );
+        }
+
+        const subscription_id = user.subscription.id;
+
+        const cancel = await razorpayinstance.subscriptions.cancel({
+            subscription_id
+        });
+
+        user.subscription.status = cancel.status;
+
+        await user.save();
+    } catch (error) {
+        return next(new AppError(error.message, 500));
+    }
+};
+
+const allPayments = async (req, res, next) => {
+    try {
+        const { count } = req.query;
+
+        const subscriptions = await razorpayinstance.subscriptions.all({
+            count: count || 10
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "All payments",
+            subscriptions
+        });
+    } catch (error) {
+        return next(new AppError(error.message, 500));
+    }
+};
+
+export {
+    getRazorpayApiKey,
+    buySubscription,
+    verifySubscription,
+    cancelSubscription,
+    allPayments
+};
