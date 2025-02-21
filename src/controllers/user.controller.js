@@ -17,14 +17,14 @@ const register = async (req, res, next) => {
         const { fullName, email, password } = req.body;
 
         if (!fullName || !email || !password) {
-            fs.rm(`./uploads/${req.file.filename}`);
+            fs.rm(`./public/temp/${req.file.filename}`);
             return next(new AppError("All fields are required", 400));
         }
 
         const userExists = await User.findOne({ email });
 
         if (userExists) {
-            fs.rm(`./uploads/${req.file.filename}`);
+            fs.rm(`./public/temp/${req.file.filename}`);
             return next(new AppError("Email already exists", 400));
         }
 
@@ -40,7 +40,7 @@ const register = async (req, res, next) => {
         });
 
         if (!user) {
-            fs.rm(`./uploads/${req.file.filename}`);
+            fs.rm(`./public/temp/${req.file.filename}`);
             return next(
                 new AppError("User registration failed, please try again", 400)
             );
@@ -60,14 +60,14 @@ const register = async (req, res, next) => {
                     }
                 );
 
-                fs.rm(`./uploads/${req.file.filename}`);
+                fs.rm(`./public/temp/${req.file.filename}`);
 
                 if (result) {
                     user.avtar.public_id = result.public_id;
                     user.avtar.secure_url = result.secure_url;
                 }
             } catch (error) {
-                fs.rm(`./uploads/${req.file.filename}`);
+                fs.rm(`./public/temp/${req.file.filename}`);
                 return next(
                     new AppError(
                         error.message || "File not uploaded, please try again",

@@ -1,5 +1,8 @@
 import Course from "../models/course.model.js";
+import User from "../models/user.model.js";
 import AppError from "../utils/error.util.js";
+import cloudinary from "cloudinary";
+import fs from "fs";
 
 const getAllCourses = async (req, res, next) => {
     try {
@@ -8,7 +11,7 @@ const getAllCourses = async (req, res, next) => {
         res.status(200).json({
             success: true,
             messsage: "All courses fetched successfully",
-            courses,
+            courses
         });
     } catch (error) {
         return next(new AppError(error.message, 500));
@@ -27,7 +30,7 @@ const getLecturesByCourseId = async (req, res, next) => {
         res.status(200).json({
             success: true,
             messsage: "Course lectures fetched successfully",
-            lectures: course.lectures,
+            lectures: course.lectures
         });
     } catch (error) {
         return next(new AppError(error.message, 500));
@@ -44,7 +47,7 @@ const createCourse = async (req, res, next) => {
             return next(new AppError("All fields are required", 400));
         }
 
-        const existSameTitle = Course.find({ title });
+        const existSameTitle = Course.find({ title: new RegExp(`^${title}$`, "i") });
 
         if (existSameTitle) {
             return next(
@@ -63,8 +66,8 @@ const createCourse = async (req, res, next) => {
             thumbnail: {
                 public_id: user.email,
                 secure_url:
-                    "https://res.cloudinary.com/dznnpy9yz/image/upload/v1700299101/lms/vg3ifzso1gxzdoifir45.jpg",
-            },
+                    "https://res.cloudinary.com/dznnpy9yz/image/upload/v1700299101/lms/vg3ifzso1gxzdoifir45.jpg"
+            }
         });
 
         if (!course) {
@@ -82,7 +85,7 @@ const createCourse = async (req, res, next) => {
                     req.file.path,
                     {
                         folder: "lms",
-                        resource_type: "image",
+                        resource_type: "image"
                     }
                 );
 
@@ -107,7 +110,7 @@ const createCourse = async (req, res, next) => {
         res.status(200).json({
             success: true,
             messsage: "Course created successfully",
-            course,
+            course
         });
     } catch (error) {
         return next(new AppError(error.message, 500));
@@ -149,7 +152,7 @@ const updateCourse = async (req, res, next) => {
                     req.file.path,
                     {
                         folder: "lms",
-                        resource_type: "image",
+                        resource_type: "image"
                     }
                 );
 
@@ -174,7 +177,7 @@ const updateCourse = async (req, res, next) => {
         res.status(200).json({
             success: true,
             messsage: "Course updated successfully",
-            course,
+            course
         });
     } catch (error) {
         return next(new AppError(error.message, 500));
@@ -194,13 +197,13 @@ const removeCourse = async (req, res, next) => {
         }
 
         await course.deleteOne({
-            _id: id,
+            _id: id
         });
         await cloudinary.v2.uploader.destroy(course.thumbnail.public_id);
 
         res.status(200).json({
             success: true,
-            messsage: "Course deleted successfully",
+            messsage: "Course deleted successfully"
         });
     } catch (error) {
         return next(new AppError(error.message, 500));
@@ -227,7 +230,7 @@ const createLecture = async (req, res, next) => {
         const lectureData = {
             title,
             description,
-            lecture: {},
+            lecture: {}
         };
 
         if (req.file) {
@@ -236,7 +239,7 @@ const createLecture = async (req, res, next) => {
                     req.file.path,
                     {
                         folder: "lms",
-                        resource_type: "video",
+                        resource_type: "video"
                     }
                 );
 
@@ -265,7 +268,7 @@ const createLecture = async (req, res, next) => {
         res.status(200).json({
             success: true,
             messsage: "Lecture added to the course successfully",
-            course,
+            course
         });
     } catch (error) {
         if (req.file) {
@@ -288,11 +291,11 @@ const viewLecture = async (req, res, next) => {
         const lecture = await Course.findOne(
             {
                 _id: courseid,
-                "lectures._id": lectureid,
+                "lectures._id": lectureid
             },
             {
                 _id: 0,
-                "lectures.$": 1,
+                "lectures.$": 1
             }
         );
 
@@ -303,7 +306,7 @@ const viewLecture = async (req, res, next) => {
         res.status(200).json({
             success: true,
             message: "Lecture fetched successfully",
-            lecture: lecture.lectures[0],
+            lecture: lecture.lectures[0]
         });
     } catch (error) {
         return next(new AppError(error.message, 500));
@@ -323,11 +326,11 @@ const updateLecture = async (req, res, next) => {
         const lecture = await Course.findOne(
             {
                 _id: courseid,
-                "lectures._id": lectureid,
+                "lectures._id": lectureid
             },
             {
                 _id: 0,
-                "lectures.$": 1,
+                "lectures.$": 1
             }
         );
 
@@ -357,7 +360,7 @@ const updateLecture = async (req, res, next) => {
                     req.file.path,
                     {
                         folder: "lms",
-                        resource_type: "video",
+                        resource_type: "video"
                     }
                 );
 
@@ -383,16 +386,16 @@ const updateLecture = async (req, res, next) => {
         await Course.updateOne(
             {
                 _id: courseid,
-                "lectures._id": lectureid,
+                "lectures._id": lectureid
             },
             {
-                $set: updateFields,
+                $set: updateFields
             }
         );
 
         res.status(200).json({
             success: true,
-            message: "Lecture updated successfully",
+            message: "Lecture updated successfully"
         });
     } catch (error) {
         if (req.file) {
@@ -415,11 +418,11 @@ const deleteLecture = async (req, res, next) => {
         const lecture = await Course.findOne(
             {
                 _id: courseid,
-                "lectures._id": lectureid,
+                "lectures._id": lectureid
             },
             {
                 _id: 0,
-                "lectures.$": 1,
+                "lectures.$": 1
             }
         );
 
@@ -442,7 +445,7 @@ const deleteLecture = async (req, res, next) => {
 
         res.status(200).json({
             success: true,
-            message: "Lecture deleted successfully",
+            message: "Lecture deleted successfully"
         });
     } catch (error) {
         return next(new AppError(error.message, 500));
@@ -458,5 +461,5 @@ export {
     createLecture,
     viewLecture,
     updateLecture,
-    deleteLecture,
+    deleteLecture
 };

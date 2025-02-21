@@ -1,23 +1,15 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { config } from "dotenv";
 config();
 
-const sendEmail = async function (email, subject, message) {
-    let transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: process.env.SMTP_PORT,
-        secure: true,
-        auth: {
-            user: process.env.SMTP_USERNAME,
-            pass: process.env.SMTP_PASSWORD,
-        },
-    });
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-    await transporter.sendMail({
-        from: process.env.SMTP_FROM_EMAIL,
+const sendEmail = async function (email, subject, message) {
+    await resend.emails.send({
+        from: "onboarding@resend.dev",
         to: email,
         subject: subject,
-        html: message,
+        html: message
     });
 };
 

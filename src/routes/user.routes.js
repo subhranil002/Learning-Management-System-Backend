@@ -15,7 +15,7 @@ import upload from "../middlewares/multer.middleware.js";
 
 userRoutes.post("/register", upload.single("avatar"), register);
 userRoutes.post("/login", login);
-userRoutes.delete("/logout", logout);
+userRoutes.get("/logout", logout);
 userRoutes.get("/me", isLoggedIn, getProfile);
 userRoutes.post("/forgot-password", forgotPassword);
 userRoutes.post("/reset-password/:resetToken", resetPassword);
