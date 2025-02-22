@@ -1,44 +1,49 @@
 import express from "express";
-const app = express();
+import constants from "./constants.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { config } from "dotenv";
-config();
 import morgan from "morgan";
-import userRoutes from "./routes/user.routes.js";
-import courseRoutes from "./routes/course.routes.js";
-import paymentRoutes from "./routes/payment.routes.js";
-import errorMiddleWare from "./middlewares/error.middleware.js";
-import connectionToDb from "./config/dbConnection.js";
-connectionToDb();
-import connectToCloudinary from "./config/cloudinaryConnection.js";
-connectToCloudinary();
+import { errorMiddleware } from "./middlewares/index.js";
+import {
+    healthCheckRoutes as v1_healthCheckRoutes,
+    userRoutes as v1_userRoutes,
+    courseRoutes as v1_courseRoutes,
+    paymentRoutes as v1_paymentRoutes
+} from "./routes/v1/index.js";
 
+const app = express();
+
+// Middleware
 app.use(express.json());
-
 app.use(
-    cors({
-        origin: [process.env.FRONTEND_URL],
-        credentials: true,
+    express.urlencoded({
+        extended: true
     })
 );
-
+app.use(
+    cors({
+        origin: constants.CORS_ORIGIN,
+        credentials: true
+    })
+);
 app.use(cookieParser());
-app.use(express.urlencoded({ extended: true }));
-
+app.use(express.static("public"));
 app.use(morgan("dev"));
 
-app.use("/ping", (req, res) => {
-    res.send("pong");
-});
+app.use("/api/v1/health-check", v1_healthCheckRoutes);
+app.use("/api/v1/user", v1_userRoutes);
+app.use("/api/v1/course", v1_courseRoutes);
+app.use("/api/v1/payment", v1_paymentRoutes);
 
-app.use("/api/v1/user", userRoutes);
-app.use("/api/v1/course", courseRoutes);
-app.use("/api/v1/payment", paymentRoutes);
-app.use(errorMiddleWare);
-
+// Handle 404 errors
 app.all("*", (req, res) => {
-    res.status(404).send("OOPS!! 404 page not found");
+    res.status(404).json({
+        success: false,
+        message: "Page not found"
+    });
 });
+
+// Error handling middleware
+app.use(errorMiddleware);
 
 export default app;

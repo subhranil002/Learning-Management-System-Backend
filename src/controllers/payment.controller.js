@@ -2,7 +2,7 @@ import { config } from "dotenv";
 config();
 import User from "../models/user.model.js";
 import AppError from "../utils/error.util.js";
-import razorpayinstance from "../config/razorpayConfig.js";
+import { razorpayInstance } from "../config/index.js";
 import crypto from "crypto";
 import Payment from "../models/payment.model.js";
 
@@ -26,7 +26,7 @@ const buySubscription = async (req, res, next) => {
             );
         }
 
-        const subscription = await razorpayinstance.subscriptions.create({
+        const subscription = await razorpayInstance.subscriptions.create({
             plan_id: process.env.RAZORPAY_PLAN_ID,
             customer_notify: 1
         });
@@ -105,7 +105,7 @@ const cancelSubscription = async (req, res, next) => {
 
         const subscription_id = user.subscription.id;
 
-        const cancel = await razorpayinstance.subscriptions.cancel({
+        const cancel = await razorpayInstance.subscriptions.cancel({
             subscription_id
         });
 
@@ -121,7 +121,7 @@ const allPayments = async (req, res, next) => {
     try {
         const { count } = req.query;
 
-        const subscriptions = await razorpayinstance.subscriptions.all({
+        const subscriptions = await razorpayInstance.subscriptions.all({
             count: count || 10
         });
 

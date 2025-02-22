@@ -10,13 +10,13 @@ import {
     updateCourse,
     updateLecture,
     viewLecture,
-} from "../controllers/course.controller.js";
+} from "../../controllers/course.controller.js";
 import {
     isLoggedIn,
     authorizedRoles,
     authorizedSubscriber,
-} from "../middlewares/auth.middleware.js";
-import upload from "../middlewares/multer.middleware.js";
+} from "../../middlewares/auth.middleware.js";
+import upload from "../../middlewares/multer.middleware.js";
 
 courseRoutes.get("/", getAllCourses);
 courseRoutes.get(

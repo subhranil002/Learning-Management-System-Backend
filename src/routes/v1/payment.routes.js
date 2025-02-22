@@ -5,8 +5,8 @@ import {
     cancelSubscription,
     getRazorpayApiKey,
     verifySubscription
-} from "../controllers/payment.controller.js";
-import { authorizedRoles, isLoggedIn } from "../middlewares/auth.middleware.js";
+} from "../../controllers/payment.controller.js";
+import { authorizedRoles, isLoggedIn } from "../../middlewares/auth.middleware.js";
 
 const paymentRoutes = Router();
 

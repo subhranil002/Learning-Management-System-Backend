@@ -8,10 +8,10 @@ import {
     forgotPassword,
     resetPassword,
     changePassword,
-    updateUser,
-} from "../controllers/user.controller.js";
-import { isLoggedIn } from "../middlewares/auth.middleware.js";
-import upload from "../middlewares/multer.middleware.js";
+    updateUser
+} from "../../controllers/user.controller.js";
+import { isLoggedIn } from "../../middlewares/auth.middleware.js";
+import upload from "../../middlewares/multer.middleware.js";
 
 userRoutes.post("/register", upload.single("avatar"), register);
 userRoutes.post("/login", login);
