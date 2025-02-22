@@ -14,7 +14,7 @@
         "url": "git+https://github.com/subhranil002/Learning-Management-System-Backend.git"
     },
     "author": "Subhranil Chakraborty",
-    "license": "MIT",
+    "license": "GPL-3.0-only",
     "bugs": {
         "url": "https://github.com/subhranil002/Learning-Management-System-Backend/issues"
     },
@@ -35,7 +35,6 @@
         "resend": "^4.1.2"
     },
     "devDependencies": {
-        "nodemon": "^3.1.0",
-        "prettier": "^3.2.5"
+        "nodemon": "^3.1.0"
     }
 }
