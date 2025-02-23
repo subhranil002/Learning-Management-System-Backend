@@ -15,7 +15,7 @@ import {
     isLoggedIn,
     authorizedRoles,
     authorizedSubscriber,
-} from "../../middlewares/auth.middleware.js";
+} from "../../middlewares/auth.middlewares.js";
 import upload from "../../middlewares/multer.middleware.js";
 
 courseRoutes.get("/", getAllCourses);

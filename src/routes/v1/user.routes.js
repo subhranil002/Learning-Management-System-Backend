@@ -8,18 +8,27 @@ import {
     forgotPassword,
     resetPassword,
     changePassword,
-    updateUser
+    updateUser,
+    refreshAccessToken,
+    changeAvatar,
 } from "../../controllers/user.controller.js";
-import { isLoggedIn } from "../../middlewares/auth.middleware.js";
+import { isLoggedIn } from "../../middlewares/auth.middlewares.js";
 import upload from "../../middlewares/multer.middleware.js";
 
-userRoutes.post("/register", upload.single("avatar"), register);
+userRoutes.post("/register", register);
 userRoutes.post("/login", login);
-userRoutes.get("/logout", logout);
-userRoutes.get("/me", isLoggedIn, getProfile);
+userRoutes.get("/logout", isLoggedIn, logout);
+userRoutes.get("/refresh-token", refreshAccessToken);
+userRoutes.post(
+    "/change-avatar",
+    isLoggedIn,
+    upload.single("avatar"),
+    changeAvatar
+);
+userRoutes.get("/", isLoggedIn, getProfile);
 userRoutes.post("/forgot-password", forgotPassword);
-userRoutes.post("/reset-password/:resetToken", resetPassword);
+userRoutes.post("/reset-password", resetPassword);
 userRoutes.post("/change-password", isLoggedIn, changePassword);
-userRoutes.put("/update", isLoggedIn, upload.single("avatar"), updateUser);
+userRoutes.post("/update", isLoggedIn, updateUser);
 
 export default userRoutes;

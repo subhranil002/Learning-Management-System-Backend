@@ -1,9 +1,7 @@
-import mongoose, { Schema, model } from "mongoose";
+import { Schema, model } from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { config } from "dotenv";
-config();
-import crypto from "crypto";
+import constants from "../constants.js";
 
 const userSchema = new Schema(
     {
@@ -11,7 +9,7 @@ const userSchema = new Schema(
             type: "String",
             required: [true, "Name is required"],
             lowercase: true,
-            trim: true
+            trim: true,
         },
         email: {
             type: "String",
@@ -21,34 +19,34 @@ const userSchema = new Schema(
             unique: true,
             match: [
                 /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-                "Please fill in a valid email address"
-            ]
+                "Please fill in a valid email address",
+            ],
         },
         password: {
             type: "String",
             required: [true, "Password is required"],
             minLength: [8, "Password must be at least 8 characters"],
-            select: false
+            select: false,
         },
-        avtar: {
+        avatar: {
             public_id: {
-                type: "String"
+                type: "String",
             },
             secure_url: {
-                type: "String"
-            }
+                type: "String",
+            },
         },
         role: {
             type: "String",
             enum: ["USER", "ADMIN"],
-            default: "USER"
+            default: "USER",
         },
         forgotPasswordToken: String,
         forgotPasswordExpiry: Date,
         subscription: {
             id: {
                 type: String,
-                default: ""
+                default: "",
             },
             status: {
                 type: String,
@@ -59,14 +57,14 @@ const userSchema = new Schema(
                     "Cancelled",
                     "Paused",
                     "Expired",
-                    "Completed"
+                    "Completed",
                 ],
-                default: "Completed"
-            }
-        }
+                default: "Completed",
+            },
+        },
     },
     {
-        timestamps: true
+        timestamps: true,
     }
 );
 
@@ -79,35 +77,32 @@ userSchema.pre("save", async function (next) {
 });
 
 userSchema.methods = {
-    generateJWTToken: async function () {
-        return await jwt.sign(
+    isPasswordCorrect: async function (plainTextPassword) {
+        return await bcrypt.compare(plainTextPassword, this.password);
+    },
+    generateAccessToken: async function () {
+        return jwt.sign(
             {
-                id: this._id,
-                email: this.email,
-                subscription: this.subscription,
-                role: this.role
+                _id: this._id,
             },
-            process.env.JWT_SECRET,
+            constants.ACCESS_TOKEN_SECRET,
             {
-                expiresIn: process.env.JWT_EXPIRY
+                expiresIn: constants.ACCESS_TOKEN_EXPIRE,
             }
         );
     },
-    comparePassword: async function (plainTextPassword) {
-        return await bcrypt.compare(plainTextPassword, this.password);
+    generateRefreshToken: function () {
+        return jwt.sign(
+            {
+                _id: this._id,
+            },
+            constants.REFRESH_TOKEN_SECRET,
+            {
+                expiresIn: constants.REFRESH_TOKEN_EXPIRE,
+            }
+        );
     },
-    generatePasswordResetToken: async function () {
-        const resetToken = crypto.randomBytes(20).toString("hex");
-
-        this.forgotPasswordToken = await crypto
-            .createHash("sha256")
-            .update(resetToken)
-            .digest("hex");
-        this.forgotPasswordExpiry = Date.now() + 15 * 60 * 1000;
-
-        return resetToken;
-    }
 };
 
-const User = model("user", userSchema);
+const User = model("users", userSchema);
 export default User;
