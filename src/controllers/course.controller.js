@@ -1,60 +1,25 @@
-import Course from "../models/course.model.js";
-import User from "../models/user.model.js";
-import AppError from "../utils/error.util.js";
-import cloudinary from "cloudinary";
-import fs from "fs";
+import { Course } from "../models/index.js";
+import {
+    ApiError,
+    ApiResponse,
+    asyncHandler,
+    fileHandler,
+} from "../utils/index.js";
 
-const getAllCourses = async (req, res, next) => {
+const createCourse = asyncHandler(async (req, res, next) => {
     try {
-        const courses = await Course.find({}).select("-lectures");
-
-        res.status(200).json({
-            success: true,
-            messsage: "All courses fetched successfully",
-            courses
-        });
-    } catch (error) {
-        return next(new AppError(error.message, 500));
-    }
-};
-
-const getLecturesByCourseId = async (req, res, next) => {
-    try {
-        const { id } = req.params;
-        const course = await Course.findById(id);
-
-        if (!course) {
-            return next(new AppError("Invalid course ID", 400));
+        const { title, description, category } = req.body;
+        if (!title || !description || !category) {
+            throw new ApiError("All fields are required", 400);
         }
 
-        res.status(200).json({
-            success: true,
-            messsage: "Course lectures fetched successfully",
-            lectures: course.lectures
+        const existSameTitle = await Course.findOne({
+            title: { $regex: new RegExp(`\^${title}$`, "i") },
         });
-    } catch (error) {
-        return next(new AppError(error.message, 500));
-    }
-};
-
-const createCourse = async (req, res, next) => {
-    try {
-        const { title, description, category, createdBy } = req.body;
-        const userId = req.user.id;
-        const user = await User.findById(userId);
-
-        if (!title || !description || !category || !createdBy) {
-            return next(new AppError("All fields are required", 400));
-        }
-
-        const existSameTitle = Course.find({ title: new RegExp(`^${title}$`, "i") });
-
         if (existSameTitle) {
-            return next(
-                new AppError(
-                    "Course with same title already exists, please use different title",
-                    400
-                )
+            throw new ApiError(
+                "Course with same title already exists, please use different title",
+                400
             );
         }
 
@@ -62,404 +27,469 @@ const createCourse = async (req, res, next) => {
             title,
             description,
             category,
-            createdBy,
-            thumbnail: {
-                public_id: user.email,
-                secure_url:
-                    "https://res.cloudinary.com/dznnpy9yz/image/upload/v1700299101/lms/vg3ifzso1gxzdoifir45.jpg"
-            }
+            createdBy: {
+                name: req.user.fullName,
+                _id: req.user._id,
+            },
         });
-
         if (!course) {
-            return next(
-                new AppError(
-                    "Course could not be created, please try again",
-                    400
+            throw new ApiError(
+                "Course could not be created, please try again",
+                500
+            );
+        }
+
+        res.status(200).json(new ApiResponse("Course created successfully"));
+    } catch (error) {
+        return next(
+            new ApiError(
+                `course.controller :: createCourse: ${error}`,
+                error.statusCode || 500
+            )
+        );
+    }
+});
+
+const changeThumbnail = asyncHandler(async (req, res, next) => {
+    try {
+        // Get thumbnail file from request
+        const thumbnailLocalPath = req.file ? req.file.path : "";
+
+        // Check if thumbnail file is empty
+        if (!thumbnailLocalPath) {
+            throw new ApiError("No thumbnail file provided", 400);
+        }
+
+        // Find course by ID
+        const { id } = req.params;
+        const course = await Course.findById(id);
+        if (!course) {
+            throw new ApiError("Course not found", 404);
+        }
+
+        // Delete old thumbnail
+        const result = await fileHandler.deleteCloudFile(
+            course?.thumbnail?.public_id
+        );
+        if (!result) {
+            throw new ApiError("Error deleting old thumbnail", 400);
+        }
+
+        // Upload thumbnail to Cloudinary
+        const newThumbnail =
+            await fileHandler.uploadImageToCloud(thumbnailLocalPath);
+        if (!newThumbnail.public_id || !newThumbnail.secure_url) {
+            throw new ApiError("Error uploading thumbnail", 400);
+        }
+
+        // Update course thumbnail
+        const updatedCourse = await Course.findByIdAndUpdate(
+            id,
+            {
+                thumbnail: {
+                    public_id: newThumbnail.public_id,
+                    secure_url: newThumbnail.secure_url,
+                },
+            },
+            { new: true }
+        );
+
+        // Return updated user
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    "Thumbnail changed successfully",
+                    updatedCourse.thumbnail
                 )
             );
+    } catch (error) {
+        await fileHandler.deleteLocalFiles();
+        return next(
+            new ApiError(
+                `course.controller :: changeThumbnail: ${error}`,
+                error.statusCode || 500
+            )
+        );
+    }
+});
+
+const updateCourse = asyncHandler(async (req, res, next) => {
+    try {
+        const id = req.params.id;
+        if (!id) {
+            throw new ApiError("Course ID is required", 400);
         }
 
-        if (req.file) {
-            try {
-                const result = await cloudinary.v2.uploader.upload(
-                    req.file.path,
-                    {
-                        folder: "lms",
-                        resource_type: "image"
-                    }
-                );
+        const { title, description, category } = req.body;
 
-                if (result) {
-                    course.thumbnail.public_id = result.public_id;
-                    course.thumbnail.secure_url = result.secure_url;
+        const course = await Course.findById(id);
+        if (!course) {
+            throw new ApiError("Course with given id doesnot exist", 404);
+        }
 
-                    fs.rm(`../uploads/${req.file.filename}`);
-                }
-            } catch (error) {
-                return next(
-                    new AppError(
-                        error.message || "File not uploaded, please try again",
-                        400
-                    )
+        // Check if title is already taken (case-insensitive)
+        if (title && title !== course.title) {
+            const existingCourse = await Course.findOne({
+                title: new RegExp(`^${title}$`, "i"),
+            });
+            if (existingCourse) {
+                throw new ApiError(
+                    "A course with this title already exists. Please choose a different title.",
+                    400
                 );
             }
         }
 
-        await course.save();
+        const updatedFields = {};
+        if (title) updatedFields.title = title;
+        if (description) updatedFields.description = description;
+        if (category) updatedFields.category = category;
 
-        res.status(200).json({
-            success: true,
-            messsage: "Course created successfully",
-            course
-        });
-    } catch (error) {
-        return next(new AppError(error.message, 500));
-    }
-};
-
-const updateCourse = async (req, res, next) => {
-    try {
-        const id = req.params.id;
-        const { title, description, category, createdBy } = req.body;
-
-        const course = await Course.findById(id);
-
-        if (!course) {
-            return next(
-                new AppError("Course with given id doesnot exist", 400)
-            );
-        }
-
-        if (title) {
-            course.title = title;
-        }
-
-        if (description) {
-            course.description = description;
-        }
-
-        if (category) {
-            course.category = category;
-        }
-
-        if (createdBy) {
-            course.createdBy = createdBy;
-        }
-
-        if (req.file) {
-            try {
-                const result = await cloudinary.v2.uploader.upload(
-                    req.file.path,
-                    {
-                        folder: "lms",
-                        resource_type: "image"
-                    }
-                );
-
-                if (result) {
-                    course.thumbnail.public_id = result.public_id;
-                    course.thumbnail.secure_url = result.secure_url;
-
-                    fs.rm(`../uploads/${req.file.filename}`);
-                }
-            } catch (error) {
-                return next(
-                    new AppError(
-                        error.message || "File not uploaded, please try again",
-                        500
-                    )
-                );
+        const updatedCourse = await Course.findByIdAndUpdate(
+            id,
+            updatedFields,
+            {
+                new: true,
             }
-        }
+        ).select("-lectures");
 
-        await course.save();
-
-        res.status(200).json({
-            success: true,
-            messsage: "Course updated successfully",
-            course
-        });
+        res.status(200).json(
+            new ApiResponse("Course updated successfully", updatedCourse)
+        );
     } catch (error) {
-        return next(new AppError(error.message, 500));
+        return next(
+            new ApiError(
+                `course.controller :: updateCourse: ${error}`,
+                error.statusCode || 500
+            )
+        );
     }
-};
+});
 
-const removeCourse = async (req, res, next) => {
+const removeCourse = asyncHandler(async (req, res, next) => {
     try {
-        const id = req.params.id;
+        const { id } = req.params;
+        if (!id) {
+            throw new ApiError("Course ID is required", 400);
+        }
 
         const course = await Course.findById(id);
-
         if (!course) {
-            return next(
-                new AppError("Course with given id doesnot exist", 400)
-            );
+            throw new ApiError("Course with given id doesnot exist", 404);
         }
 
-        await course.deleteOne({
-            _id: id
+        await fileHandler.deleteCloudFile(course.thumbnail.public_id);
+        course.lectures.forEach(async (lecture) => {
+            await fileHandler.deleteCloudFile(lecture.lecture.public_id);
         });
-        await cloudinary.v2.uploader.destroy(course.thumbnail.public_id);
+        await Course.findByIdAndDelete(id);
 
-        res.status(200).json({
-            success: true,
-            messsage: "Course deleted successfully"
-        });
+        res.status(200).json(new ApiResponse("Course removed successfully"));
     } catch (error) {
-        return next(new AppError(error.message, 500));
+        return next(
+            new ApiError(
+                `course.controller :: removeCourse: ${error}`,
+                error.statusCode || 500
+            )
+        );
     }
-};
+});
 
-const createLecture = async (req, res, next) => {
+const getAllCourses = asyncHandler(async (req, res, next) => {
+    try {
+        const courses = await Course.find()
+            .select("-lectures")
+            .sort({ createdAt: -1 });
+
+        res.status(200).json(
+            new ApiResponse("Courses fetched successfully", courses)
+        );
+    } catch (error) {
+        return next(
+            new ApiError(
+                `course.controller :: getAllCourses: ${error}`,
+                error.statusCode || 500
+            )
+        );
+    }
+});
+
+const createLecture = asyncHandler(async (req, res, next) => {
     try {
         const { title, description } = req.body;
-        const id = req.params.id;
-
-        if (!title || !description || !req.file) {
-            return next(new AppError("All fields are required", 400));
+        const { id } = req.params;
+        if (!title || !description || !id) {
+            throw new ApiError("All fields are required", 400);
         }
 
         const course = await Course.findById(id);
-
         if (!course) {
-            return next(
-                new AppError("Course with given id doesnot exist", 400)
-            );
+            throw new ApiError("Course with given id doesnot exist", 404);
         }
 
         const lectureData = {
             title,
             description,
-            lecture: {}
         };
 
-        if (req.file) {
-            try {
-                const result = await cloudinary.v2.uploader.upload(
-                    req.file.path,
-                    {
-                        folder: "lms",
-                        resource_type: "video"
-                    }
-                );
-
-                if (result) {
-                    lectureData.lecture.public_id = result.public_id;
-                    lectureData.lecture.secure_url = result.secure_url;
-
-                    fs.rm(`uploads/${req.file.filename}`);
-                }
-            } catch (error) {
-                fs.rm(`uploads/${req.file.filename}`);
-                return next(
-                    new AppError(
-                        error.message || "File not uploaded, please try again",
-                        400
-                    )
-                );
-            }
-        }
-
         course.lectures.push(lectureData);
-        course.numbersOfLectures = course.lectures.length;
-
         await course.save();
 
-        res.status(200).json({
-            success: true,
-            messsage: "Lecture added to the course successfully",
-            course
-        });
-    } catch (error) {
-        if (req.file) {
-            fs.rm(`uploads/${req.file.filename}`);
-        }
-        return next(new AppError(error.message, 500));
-    }
-};
-
-const viewLecture = async (req, res, next) => {
-    try {
-        const { courseid, lectureid } = req.params;
-
-        const course = await Course.findById(courseid);
-
-        if (!course) {
-            return next(new AppError("Course not found", 400));
-        }
-
-        const lecture = await Course.findOne(
-            {
-                _id: courseid,
-                "lectures._id": lectureid
-            },
-            {
-                _id: 0,
-                "lectures.$": 1
-            }
+        res.status(200).json(
+            new ApiResponse("Lecture created successfully", course.lectures)
         );
-
-        if (!lecture) {
-            return next(new AppError("Lecture not found", 400));
-        }
-
-        res.status(200).json({
-            success: true,
-            message: "Lecture fetched successfully",
-            lecture: lecture.lectures[0]
-        });
     } catch (error) {
-        return next(new AppError(error.message, 500));
+        return next(
+            new ApiError(
+                `course.controller :: createLecture: ${error}`,
+                error.statusCode || 500
+            )
+        );
     }
-};
+});
 
-const updateLecture = async (req, res, next) => {
+const changeLectureVideo = asyncHandler(async (req, res, next) => {
     try {
-        const { courseid, lectureid } = req.params;
+        // Get lecture file from request
+        const lectureLocalPath = req.file ? req.file.path : "";
 
-        const course = await Course.findById(courseid);
-
-        if (!course) {
-            return next(new AppError("Course not found", 400));
+        // Check if lecture file is empty
+        if (!lectureLocalPath) {
+            throw new ApiError("No lecture file provided", 400);
         }
 
-        const lecture = await Course.findOne(
-            {
-                _id: courseid,
-                "lectures._id": lectureid
-            },
-            {
-                _id: 0,
-                "lectures.$": 1
-            }
-        );
+        // Find course by ID
+        const { courseId, lectureId } = req.params;
+        if (!courseId || !lectureId) {
+            throw new ApiError("Course ID and Lecture ID are required", 400);
+        }
 
+        // Find the course by its ID
+        const course = await Course.findById(courseId);
+        if (!course) {
+            throw new ApiError("Course not found", 404);
+        }
+
+        // Find the specific lecture within the course
+        const lecture = course.lectures.find(
+            (lec) => lec._id.toString() === lectureId
+        );
         if (!lecture) {
-            return next(new AppError("Lecture not found", 400));
+            throw new ApiError("Lecture not found", 404);
+        }
+
+        // Delete old lecture
+        const result = await fileHandler.deleteCloudFile(
+            lecture?.lecture?.public_id
+        );
+        if (!result) {
+            throw new ApiError("Error deleting old lecture", 400);
+        }
+
+        // Upload lecture to Cloudinary
+        const newLecture =
+            await fileHandler.uploadVideoToCloud(lectureLocalPath);
+        if (!newLecture.public_id || !newLecture.secure_url) {
+            throw new ApiError("Error uploading lecture", 400);
+        }
+
+        const updatedlectures = course.lectures.map((lec) => {
+            if (lec._id.toString() === lectureId) {
+                return {
+                    ...lec,
+                    lecture: {
+                        public_id: newLecture.public_id,
+                        secure_url: newLecture.secure_url,
+                    },
+                };
+            }
+            return lec;
+        });
+        course.lectures = updatedlectures;
+        await course.save();
+
+        // Return updated user
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    "Thumbnail changed successfully",
+                    course.lectures.find(
+                        (lec) => lec._id.toString() === lectureId
+                    ).lecture
+                )
+            );
+    } catch (error) {
+        await fileHandler.deleteLocalFiles();
+        return next(
+            new ApiError(
+                `course.controller :: changeLectureVideo: ${error}`,
+                error.statusCode || 500
+            )
+        );
+    }
+});
+
+const getLecturesByCourseId = asyncHandler(async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        if (!id) {
+            throw new ApiError("Course ID is required", 400);
+        }
+
+        const course = await Course.findById(id).select("lectures");
+        if (!course) {
+            throw new ApiError("Invalid course ID", 404);
+        }
+
+        res.status(200).json(
+            new ApiResponse("Lectures fetched successfully", course.lectures)
+        );
+    } catch (error) {
+        return next(
+            new ApiError(
+                `course.controller :: getLecturesByCourseId: ${error}`,
+                error.statusCode || 500
+            )
+        );
+    }
+});
+
+const viewLecture = asyncHandler(async (req, res, next) => {
+    try {
+        const { courseId, lectureId } = req.params;
+        if (!courseId || !lectureId) {
+            throw new ApiError("Course ID and Lecture ID are required", 400);
+        }
+
+        const course = await Course.findById(courseId);
+        if (!course) {
+            throw new ApiError("Course not found", 404);
+        }
+
+        const lecture = course.lectures.find(
+            (lec) => lec._id.toString() === lectureId
+        );
+        if (!lecture) {
+            throw new ApiError("Lecture not found", 404);
+        }
+
+        res.status(200).json(
+            new ApiResponse("Lecture fetched successfully", lecture)
+        );
+    } catch (error) {
+        return next(
+            new ApiError(
+                `course.controller :: viewLecture: ${error}`,
+                error.statusCode || 500
+            )
+        );
+    }
+});
+
+const updateLecture = asyncHandler(async (req, res, next) => {
+    try {
+        const { courseId, lectureId } = req.params;
+        if (!courseId || !lectureId) {
+            throw new ApiError("Course ID and Lecture ID are required", 400);
+        }
+
+        const course = await Course.findById(courseId);
+        if (!course) {
+            throw new ApiError("Course not found", 404);
+        }
+
+        const lecture = course.lectures.find(
+            (lec) => lec._id.toString() === lectureId
+        );
+        if (!lecture) {
+            throw new ApiError("Lecture not found", 404);
         }
 
         const { title, description } = req.body;
-
-        const updateFields = {};
-
-        if (title) {
-            updateFields["lectures.$.title"] = title;
+        if (!title && !description) {
+            throw new ApiError("No fields to update", 400);
         }
 
-        if (description) {
-            updateFields["lectures.$.description"] = description;
-        }
-
-        if (req.file) {
-            try {
-                const public_id = lecture.lectures[0].lecture.public_id;
-
-                await cloudinary.v2.uploader.destroy(public_id);
-
-                const result = await cloudinary.v2.uploader.upload(
-                    req.file.path,
-                    {
-                        folder: "lms",
-                        resource_type: "video"
-                    }
-                );
-
-                if (result) {
-                    updateFields["lectures.$.lecture.public_id"] =
-                        result.public_id;
-                    updateFields["lectures.$.lecture.secure_url"] =
-                        result.secure_url;
-
-                    fs.rm(`uploads/${req.file.filename}`);
-                }
-            } catch (error) {
-                fs.rm(`uploads/${req.file.filename}`);
-                return next(
-                    new AppError(
-                        error.message || "File not uploaded, please try again",
-                        400
-                    )
-                );
-            }
-        }
-
-        await Course.updateOne(
+        const updatedCourse = await Course.findOneAndUpdate(
+            { _id: courseId, "lectures._id": lectureId },
             {
-                _id: courseid,
-                "lectures._id": lectureid
+                $set: {
+                    "lectures.$.title": title || lecture.title,
+                    "lectures.$.description":
+                        description || lecture.description,
+                },
             },
-            {
-                $set: updateFields
-            }
+            { new: true }
         );
 
-        res.status(200).json({
-            success: true,
-            message: "Lecture updated successfully"
-        });
+        res.status(200).json(
+            new ApiResponse(
+                "Lecture updated successfully",
+                updatedCourse.lectures.find(
+                    (lec) => lec._id.toString() === lectureId
+                )
+            )
+        );
     } catch (error) {
-        if (req.file) {
-            fs.rm(`uploads/${req.file.filename}`);
-        }
-        return next(new AppError(error.message, 500));
+        return next(
+            new ApiError(
+                `course.controller :: updateLecture: ${error}`,
+                error.statusCode || 500
+            )
+        );
     }
-};
+});
 
-const deleteLecture = async (req, res, next) => {
+const deleteLecture = asyncHandler(async (req, res, next) => {
     try {
-        const { courseid, lectureid } = req.params;
+        const { courseId, lectureId } = req.params;
+        if (!courseId || !lectureId) {
+            throw new ApiError("Course ID and Lecture ID are required", 400);
+        }
 
-        const course = await Course.findById(courseid);
-
+        const course = await Course.findById(courseId);
         if (!course) {
-            return next(new AppError("Course not found", 400));
+            throw new ApiError("Course not found", 404);
         }
 
-        const lecture = await Course.findOne(
-            {
-                _id: courseid,
-                "lectures._id": lectureid
-            },
-            {
-                _id: 0,
-                "lectures.$": 1
-            }
+        const lecture = course.lectures.find(
+            (lec) => lec._id.toString() === lectureId
         );
-
         if (!lecture) {
-            return next(new AppError("Lecture not found", 400));
+            throw new ApiError("Lecture not found", 404);
         }
 
-        const public_id = lecture.lectures[0].lecture.public_id;
-
-        await cloudinary.v2.uploader.destroy(public_id);
-
-        await Course.updateOne(
-            { _id: courseid },
-            { $pull: { lectures: { _id: lectureid } } }
+        await fileHandler.deleteCloudFile(lecture?.lecture?.public_id);
+        course.lectures = course.lectures.filter(
+            (lec) => lec._id.toString() !== lectureId
         );
-
-        course.numbersOfLectures = course.lectures.length;
-
         await course.save();
 
-        res.status(200).json({
-            success: true,
-            message: "Lecture deleted successfully"
-        });
+        res.status(200).json(
+            new ApiResponse("Lecture deleted successfully", course.lectures)
+        );
     } catch (error) {
-        return next(new AppError(error.message, 500));
+        return next(
+            new ApiError(
+                `course.controller :: deleteLecture: ${error}`,
+                error.statusCode || 500
+            )
+        );
     }
-};
+});
 
 export {
-    getAllCourses,
-    getLecturesByCourseId,
     createCourse,
+    changeThumbnail,
     updateCourse,
     removeCourse,
+    getAllCourses,
     createLecture,
-    viewLecture,
+    changeLectureVideo,
     updateLecture,
-    deleteLecture
+    getLecturesByCourseId,
+    viewLecture,
+    deleteLecture,
 };

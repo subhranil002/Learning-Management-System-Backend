@@ -183,30 +183,26 @@ const changeAvatar = asyncHandler(async (req, res, next) => {
 
         // Check if avatar file is empty
         if (!avatarLocalPath) {
-            await fileHandler.deleteLocalFiles();
             throw new ApiError("No avatar file provided", 400);
         }
 
         // Find current user
         const user = await User.findById(req.user._id).select("avatar");
         if (!user) {
-            await fileHandler.deleteLocalFiles();
             throw new ApiError("Unauthorized request, please login again", 403);
         }
 
         // Delete old avatar
-        const result = await fileHandler.deleteCloudImage(
+        const result = await fileHandler.deleteCloudFile(
             user?.avatar?.public_id
         );
         if (!result) {
-            await fileHandler.deleteLocalFiles();
             throw new ApiError("Error deleting old avatar", 400);
         }
 
         // Upload avatar to Cloudinary
         const newAvatar = await fileHandler.uploadImageToCloud(avatarLocalPath);
         if (!newAvatar.public_id || !newAvatar.secure_url) {
-            await fileHandler.deleteLocalFiles();
             throw new ApiError("Error uploading avatar", 400);
         }
 
@@ -227,6 +223,7 @@ const changeAvatar = asyncHandler(async (req, res, next) => {
             .status(200)
             .json(new ApiResponse("Avatar changed successfully", updatedUser));
     } catch (error) {
+        await fileHandler.deleteLocalFiles();
         return next(
             new ApiError(
                 `user.controller :: changeAvatar: ${error}`,

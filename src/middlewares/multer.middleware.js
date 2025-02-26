@@ -3,7 +3,7 @@ import multer from "multer";
 
 const upload = multer({
     dest: "./public/temp",
-    limits: { fileSize: 5 * 1024 * 1024 },
+    limits: { fileSize: 500 * 1024 * 1024 },
     storage: multer.diskStorage({
         destination: "./public/temp",
         filename: (_req, file, cb) => {

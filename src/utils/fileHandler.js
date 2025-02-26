@@ -38,7 +38,7 @@ const uploadImageToCloud = async (localFilePath) => {
         // Upload image
         const response = await cloudinary.uploader.upload(localFilePath, {
             resource_type: "image",
-            folder: constants.CLOUDINARY_FOLDER,
+            folder: constants.CLOUDINARY_IMAGE_FOLDER,
         });
 
         // Delete local files
@@ -55,7 +55,32 @@ const uploadImageToCloud = async (localFilePath) => {
     }
 };
 
-const deleteCloudImage = async (publicId) => {
+const uploadVideoToCloud = async (localFilePath) => {
+    // Check if localFilePath is empty
+    if (!localFilePath) return null;
+
+    try {
+        // Upload video
+        const response = await cloudinary.uploader.upload(localFilePath, {
+            resource_type: "video",
+            folder: constants.CLOUDINARY_VIDEO_FOLDER,
+        });
+
+        // Delete local files
+        await deleteLocalFiles();
+
+        // Return public_id and secure_url
+        return {
+            public_id: response.public_id,
+            secure_url: response.secure_url,
+        };
+    } catch (error) {
+        await deleteLocalFiles();
+        throw new ApiError("Error while uploading video to Cloudinary", 500);
+    }
+};
+
+const deleteCloudFile = async (publicId) => {
     try {
         // Check if publicId is empty
         if (!publicId) return true;
@@ -72,7 +97,8 @@ const deleteCloudImage = async (publicId) => {
 const fileHandler = {
     deleteLocalFiles,
     uploadImageToCloud,
-    deleteCloudImage,
+    uploadVideoToCloud,
+    deleteCloudFile,
 };
 
 export default fileHandler;

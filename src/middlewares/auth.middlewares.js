@@ -45,11 +45,14 @@ const isLoggedIn = async (req, res, next) => {
 
 const authorizedRoles =
     (...roles) =>
-    async (req, res, next) => {
-        const currentUserRole = await req.user.role;
-
-        if (!roles.includes(currentUserRole)) {
-            return next(new ApiError("Unauthorized!", 400));
+    (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
+            return next(
+                new ApiError(
+                    "You do not have permission to access this resource",
+                    403
+                )
+            );
         }
 
         next();

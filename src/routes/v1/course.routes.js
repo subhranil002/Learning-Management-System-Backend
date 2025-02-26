@@ -1,6 +1,8 @@
 import { Router } from "express";
 const courseRoutes = Router();
 import {
+    changeLectureVideo,
+    changeThumbnail,
     createCourse,
     createLecture,
     deleteLecture,
@@ -18,62 +20,46 @@ import {
 } from "../../middlewares/auth.middlewares.js";
 import upload from "../../middlewares/multer.middleware.js";
 
-courseRoutes.get("/", getAllCourses);
-courseRoutes.get(
-    "/:id",
-    isLoggedIn,
-    authorizedSubscriber,
-    getLecturesByCourseId
-);
-courseRoutes.post(
-    "/create-course",
-    isLoggedIn,
-    authorizedRoles("ADMIN"),
-    upload.single("thumbnail"),
-    createCourse
-);
-courseRoutes.put(
-    "/update-course/:id",
-    isLoggedIn,
-    authorizedRoles("ADMIN"),
-    upload.single("thumbnail"),
-    updateCourse
-);
-courseRoutes.delete(
-    "/remove-course/:id",
-    isLoggedIn,
-    authorizedRoles("ADMIN"),
-    removeCourse
-);
-
-courseRoutes.post(
-    "/:id/add-lecture",
-    isLoggedIn,
-    authorizedRoles("ADMIN"),
-    upload.single("lecture"),
-    createLecture
-);
-
-courseRoutes.get(
-    "/:courseid/view-lecture/:lectureid",
-    isLoggedIn,
-    authorizedSubscriber,
-    viewLecture
-);
-
-courseRoutes.put(
-    "/:courseid/update-lecture/:lectureid",
-    isLoggedIn,
-    authorizedRoles("ADMIN"),
-    upload.single("lecture"),
-    updateLecture
-);
-
-courseRoutes.delete(
-    "/:courseid/delete-lecture/:lectureid",
-    isLoggedIn,
-    authorizedRoles("ADMIN"),
-    deleteLecture
-);
+courseRoutes
+    .route("/create")
+    .post(isLoggedIn, authorizedRoles("ADMIN"), createCourse);
+courseRoutes
+    .route("/change-thumbnail/:id")
+    .post(
+        isLoggedIn,
+        authorizedRoles("ADMIN"),
+        upload.single("thumbnail"),
+        changeThumbnail
+    );
+courseRoutes
+    .route("/update/:id")
+    .post(isLoggedIn, authorizedRoles("ADMIN"), updateCourse);
+courseRoutes
+    .route("/delete/:id")
+    .get(isLoggedIn, authorizedRoles("ADMIN"), removeCourse);
+courseRoutes.route("/").get(getAllCourses);
+courseRoutes
+    .route("/:id/create")
+    .post(isLoggedIn, authorizedRoles("ADMIN"), createLecture);
+courseRoutes
+    .route("/:courseId/:lectureId")
+    .post(
+        isLoggedIn,
+        authorizedRoles("ADMIN"),
+        upload.single("lecture"),
+        changeLectureVideo
+    );
+courseRoutes
+    .route("/:id")
+    .get(isLoggedIn, authorizedSubscriber, getLecturesByCourseId);
+courseRoutes
+    .route("/:courseId/view/:lectureId")
+    .get(isLoggedIn, authorizedSubscriber, viewLecture);
+courseRoutes
+    .route("/:courseId/update/:lectureId")
+    .post(isLoggedIn, authorizedRoles("ADMIN"), updateLecture);
+courseRoutes
+    .route("/:courseId/delete/:lectureId")
+    .get(isLoggedIn, authorizedRoles("ADMIN"), deleteLecture);
 
 export default courseRoutes;
