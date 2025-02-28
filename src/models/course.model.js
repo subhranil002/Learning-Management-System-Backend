@@ -73,6 +73,6 @@ courseSchema.pre("save", function (next) {
     next();
 });
 
-const Course = model("Course", courseSchema);
+const Course = model("courses", courseSchema);
 
 export default Course;

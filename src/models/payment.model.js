@@ -2,15 +2,15 @@ import { model, Schema } from "mongoose";
 
 const paymentSchema = new Schema(
     {
-        rozorpay_payment_id: {
+        razorpay_payment_id: {
             type: String,
             required: true,
         },
-        rozorpay_subscription_id: {
+        razorpay_subscription_id: {
             type: String,
             required: true,
         },
-        rozorpay_signature: {
+        razorpay_signature: {
             type: String,
             required: true,
         },
@@ -20,6 +20,6 @@ const paymentSchema = new Schema(
     }
 );
 
-const Payment = model("Payment", paymentSchema);
+const Payment = model("payments", paymentSchema);
 
 export default Payment;

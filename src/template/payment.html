@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Payment Gateway</title>
+    </head>
+    <body>
+        <!-- Razorpay Checkout Button -->
+        <button id="pay-button">Pay</button>
+        <!-- Razorpay Checkout Script -->
+        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+        <script>
+            // Set Razorpay credentials
+            const constants = {
+                razorpay_key_id: "rzp_test_tk0UtTpGIBKyKL",
+                subscription_id: "sub_Q15SFgB0s3u3a6",
+                company_name: "LMS Backend",
+            };
+
+            // Set Razorpay Options
+            const options = {
+                key: constants.razorpay_key_id,
+                name: constants.company_name,
+                subscription_id: constants.subscription_id,
+                handler: async function (response) {
+                    const data = {
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature,
+                    };
+                    console.log("Data: ", data);
+                    document.getElementById("pay-button").style.display =
+                        "none";
+                    document.write(
+                        "Payment Successful, Check console for data"
+                    );
+                },
+            };
+
+            // Initialize Razorpay
+            const razorpay = new Razorpay(options);
+            // Add event listeners
+            document
+                .getElementById("pay-button")
+                .addEventListener("click", function (e) {
+                    razorpay.open();
+                    e.preventDefault();
+                });
+            // On payment failed
+            razorpay.on("payment.failed", function (response) {
+                document.write(
+                    "Caugnt a failed payment, Refresh page to try again or call cancel API"
+                );
+                document.getElementById("pay-button").style.display = "none";
+                console.log(response);
+            });
+        </script>
+    </body>
+</html>

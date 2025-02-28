@@ -17,6 +17,7 @@ const constants = {
     REFRESH_TOKEN_EXPIRE: process.env.REFRESH_TOKEN_EXPIRE,
     RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
     RAZORPAY_SECRET: process.env.RAZORPAY_SECRET,
+    RAZORPAY_PLAN_ID: process.env.RAZORPAY_PLAN_ID,
     RESEND_API_KEY: process.env.RESEND_API_KEY
 };
 

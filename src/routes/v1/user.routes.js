@@ -15,20 +15,17 @@ import {
 import { isLoggedIn } from "../../middlewares/auth.middlewares.js";
 import upload from "../../middlewares/multer.middleware.js";
 
-userRoutes.post("/register", register);
-userRoutes.post("/login", login);
-userRoutes.get("/logout", isLoggedIn, logout);
-userRoutes.get("/refresh-token", refreshAccessToken);
-userRoutes.post(
-    "/change-avatar",
-    isLoggedIn,
-    upload.single("avatar"),
-    changeAvatar
-);
-userRoutes.get("/", isLoggedIn, getProfile);
-userRoutes.post("/forgot-password", forgotPassword);
-userRoutes.post("/reset-password", resetPassword);
-userRoutes.post("/change-password", isLoggedIn, changePassword);
-userRoutes.post("/update", isLoggedIn, updateUser);
+userRoutes.route("/register").post(register);
+userRoutes.route("/login").post(login);
+userRoutes.route("/logout").get(logout);
+userRoutes.route("/refresh-token").get(refreshAccessToken);
+userRoutes
+    .route("/change-avatar")
+    .post(isLoggedIn, upload.single("avatar"), changeAvatar);
+userRoutes.route("/profile").get(isLoggedIn, getProfile);
+userRoutes.route("/forgot-password").post(forgotPassword);
+userRoutes.route("/reset-password").post(resetPassword);
+userRoutes.route("/change-password").post(isLoggedIn, changePassword);
+userRoutes.route("/update-user").post(isLoggedIn, updateUser);
 
 export default userRoutes;

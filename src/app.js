@@ -33,7 +33,7 @@ app.use(morgan("dev"));
 app.use("/api/v1/health-check", v1_healthCheckRoutes);
 app.use("/api/v1/users", v1_userRoutes);
 app.use("/api/v1/courses", v1_courseRoutes);
-app.use("/api/v1/payment", v1_paymentRoutes);
+app.use("/api/v1/payments", v1_paymentRoutes);
 
 // Handle 404 errors
 app.all("*", (req, res) => {
