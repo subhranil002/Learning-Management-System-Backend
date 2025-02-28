@@ -3,7 +3,7 @@ import "dotenv/config";
 const constants = {
     PORT: process.env.PORT,
     NODE_ENV: process.env.NODE_ENV,
-    CORS_ORIGIN: process.env.CORS_ORIGIN,
+    FRONTEND_URL: process.env.FRONTEND_URL,
     MONGO_URI: process.env.MONGO_URI,
     DB_NAME: process.env.DB_NAME,
     CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,

@@ -22,7 +22,7 @@ app.use(
 );
 app.use(
     cors({
-        origin: constants.CORS_ORIGIN,
+        origin: constants.FRONTEND_URL,
         credentials: true,
     })
 );
@@ -30,7 +30,7 @@ app.use(cookieParser());
 app.use(express.static("public"));
 app.use(morgan("dev"));
 
-app.use("/api/v1/health-check", v1_healthCheckRoutes);
+app.use("/api/v1/healthcheck", v1_healthCheckRoutes);
 app.use("/api/v1/users", v1_userRoutes);
 app.use("/api/v1/courses", v1_courseRoutes);
 app.use("/api/v1/payments", v1_paymentRoutes);
