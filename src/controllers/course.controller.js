@@ -12,6 +12,18 @@ const createCourse = asyncHandler(async (req, res, next) => {
         if (!title || !description || !category) {
             throw new ApiError("All fields are required", 400);
         }
+        if (title.length > 50 || title.length < 5) {
+            throw new ApiError(
+                "Title should be greater than 5 and less than 50 characters",
+                400
+            );
+        }
+        if (description.length > 200 || description.length < 50) {
+            throw new ApiError(
+                "Description should be greater than 50 and less than 200 characters",
+                400
+            );
+        }
 
         const existSameTitle = await Course.findOne({
             title: { $regex: new RegExp(`\^${title}$`, "i") },
@@ -39,7 +51,9 @@ const createCourse = asyncHandler(async (req, res, next) => {
             );
         }
 
-        res.status(200).json(new ApiResponse("Course created successfully"));
+        res.status(200).json(
+            new ApiResponse("Course created successfully", course)
+        );
     } catch (error) {
         return next(
             new ApiError(

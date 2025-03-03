@@ -46,9 +46,15 @@ const register = asyncHandler(async (req, res, next) => {
         res.cookie("accessToken", accessToken, {
             httpOnly: true,
             secure: true,
+            sameSite: "None",
+            maxAge: 24 * 60 * 60 * 1000,
+            path: "/",
         }).cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: true,
+            sameSite: "None",
+            maxAge: 24 * 60 * 60 * 1000,
+            path: "/",
         });
 
         user.password = undefined;
@@ -88,9 +94,15 @@ const login = asyncHandler(async (req, res, next) => {
         res.cookie("accessToken", accessToken, {
             httpOnly: true,
             secure: true,
+            sameSite: "None",
+            maxAge: 24 * 60 * 60 * 1000,
+            path: "/",
         }).cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: true,
+            sameSite: "None",
+            maxAge: 24 * 60 * 60 * 1000,
+            path: "/",
         });
 
         res.status(200).json(
@@ -108,14 +120,16 @@ const login = asyncHandler(async (req, res, next) => {
 
 const logout = (req, res) => {
     try {
-        res.cookie("accessToken", "", {
+        res.clearCookie("accessToken", {
             httpOnly: true,
             secure: true,
-            expires: new Date(0),
-        }).cookie("refreshToken", "", {
+            sameSite: "None",
+            path: "/",
+        }).clearCookie("refreshToken", {
             httpOnly: true,
             secure: true,
-            expires: new Date(0),
+            sameSite: "None",
+            path: "/",
         });
 
         res.status(200).json(new ApiResponse("User logged out successfully"));
@@ -158,9 +172,15 @@ const refreshAccessToken = asyncHandler(async (req, res, next) => {
         res.cookie("accessToken", accessToken, {
             httpOnly: true,
             secure: true,
+            sameSite: "None",
+            maxAge: 24 * 60 * 60 * 1000,
+            path: "/",
         }).cookie("refreshToken", newRefreshToken, {
             httpOnly: true,
             secure: true,
+            sameSite: "None",
+            maxAge: 24 * 60 * 60 * 1000,
+            path: "/",
         });
 
         res.status(200).json(
