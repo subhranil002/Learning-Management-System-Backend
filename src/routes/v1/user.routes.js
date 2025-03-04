@@ -26,6 +26,6 @@ userRoutes.route("/profile").get(isLoggedIn, getProfile);
 userRoutes.route("/forgot-password").post(forgotPassword);
 userRoutes.route("/reset-password").post(resetPassword);
 userRoutes.route("/change-password").post(isLoggedIn, changePassword);
-userRoutes.route("/update-user").post(isLoggedIn, updateUser);
+userRoutes.route("/update").post(isLoggedIn, updateUser);
 
 export default userRoutes;
