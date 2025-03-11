@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Course } from "../models/index.js";
 import {
     ApiError,
@@ -243,6 +244,7 @@ const createLecture = asyncHandler(async (req, res, next) => {
         }
 
         const lectureData = {
+            _id: new mongoose.Types.ObjectId(),
             title,
             description,
         };
@@ -251,7 +253,7 @@ const createLecture = asyncHandler(async (req, res, next) => {
         await course.save();
 
         res.status(200).json(
-            new ApiResponse("Lecture created successfully", course.lectures)
+            new ApiResponse("Lecture created successfully", lectureData)
         );
     } catch (error) {
         return next(

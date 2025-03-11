@@ -62,7 +62,7 @@ const authorizedSubscriber = async (req, res, next) => {
     const subscription = req.user.subscription;
     const currentUserRole = req.user.role;
 
-    if (currentUserRole !== "ADMIN" && subscription !== "active") {
+    if (currentUserRole !== "ADMIN" && subscription.status !== "active") {
         return next(new ApiError("Please subscribe to access this route", 400));
     }
 
