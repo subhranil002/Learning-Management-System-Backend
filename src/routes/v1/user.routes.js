@@ -11,6 +11,7 @@ import {
     updateUser,
     refreshAccessToken,
     changeAvatar,
+    contactUs,
 } from "../../controllers/user.controller.js";
 import { isLoggedIn } from "../../middlewares/auth.middlewares.js";
 import upload from "../../middlewares/multer.middleware.js";
@@ -27,5 +28,6 @@ userRoutes.route("/forgot-password").post(forgotPassword);
 userRoutes.route("/reset-password").post(resetPassword);
 userRoutes.route("/change-password").post(isLoggedIn, changePassword);
 userRoutes.route("/update").post(isLoggedIn, updateUser);
+userRoutes.route("/contact").post(contactUs);
 
 export default userRoutes;

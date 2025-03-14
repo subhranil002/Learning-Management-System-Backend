@@ -398,6 +398,67 @@ const updateUser = asyncHandler(async (req, res, next) => {
     }
 });
 
+const contactUs = asyncHandler(async (req, res, next) => {
+    try {
+        const { name, email, message } = req.body;
+        if (!name || !email || !message) {
+            throw new ApiError("All fields are required", 400);
+        }
+
+        const mailMessage = `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 20px auto; color: #333;">
+        <div style="background: #f8f9fa; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <h2 style="color: #2d3436; border-bottom: 2px solid #0984e3; padding-bottom: 10px; margin-bottom: 25px;">
+            📬 New Contact Message
+        </h2>
+        
+        <div style="margin-bottom: 25px;">
+            <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                <span style="width: 80px; color: #0984e3; font-weight: 500; font-size: 16px;">👤 Name:</span>
+                <span style="font-size: 16px;">${name}</span>
+            </div>
+            
+            <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                <span style="width: 80px; color: #0984e3; font-weight: 500; font-size: 16px;">📧 Email:</span>
+                <span style="font-size: 16px;">${email}</span>
+            </div>
+            
+            <div style="margin-top: 25px;">
+                <h3 style="color: #0984e3; margin-bottom: 15px; ">✉️ Message:</h3>
+                <p style="background: #ffffff; padding: 15px; border-radius: 8px; line-height: 1.6; 
+                    border: 1px solid #eee;">
+                    ${message}
+                </p>
+            </div>
+        </div>
+        
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+        
+        <div style="text-align: center; color: #666; font-size: 14px;">
+            <p>This message was sent from the contact form at <strong>Brain-2xl</strong></p>
+            <p style="margin-top: 10px;">🕒 Received at: ${new Date().toLocaleString()}</p>
+        </div>
+        </div>
+    
+            <div style="text-align: center; color: #999; font-size: 12px; margin-top: 20px;">
+            <p>© ${new Date().getFullYear()} Brain-2xl. All rights reserved.</p>
+        </div>
+        </div>
+        `;
+
+        await sendEmail(email, "LMS : Contact Us", mailMessage);
+
+        res.status(200).json(new ApiResponse("Message sent successfully"));
+    } catch (error) {
+        return next(
+            new ApiError(
+                `user.controller :: contactUs: ${error}`,
+                error.statusCode || 500
+            )
+        );
+    }
+});
+
 export {
     register,
     login,
@@ -409,4 +470,5 @@ export {
     resetPassword,
     changePassword,
     updateUser,
+    contactUs,
 };
