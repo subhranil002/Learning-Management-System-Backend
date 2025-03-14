@@ -82,7 +82,7 @@ const login = asyncHandler(async (req, res, next) => {
 
         const user = await User.findOne({ email }).select("+password");
 
-        if (!user || !user.isPasswordCorrect(password)) {
+        if (!user || !(await user.isPasswordCorrect(password))) {
             throw new ApiError("Invalid email or password", 401);
         }
 
@@ -352,7 +352,7 @@ const changePassword = asyncHandler(async (req, res, next) => {
         }
 
         const user = await User.findById(req.user._id).select("+password");
-        if (!user.isPasswordCorrect(oldPassword)) {
+        if (!(await user.isPasswordCorrect(oldPassword))) {
             throw new ApiError("Incorrect credentials", 401);
         }
 
