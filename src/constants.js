@@ -18,7 +18,12 @@ const constants = {
     RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
     RAZORPAY_SECRET: process.env.RAZORPAY_SECRET,
     RAZORPAY_PLAN_ID: process.env.RAZORPAY_PLAN_ID,
-    RESEND_API_KEY: process.env.RESEND_API_KEY
+    SMTP_HOST: process.env.SMTP_HOST,
+    SMTP_PORT: process.env.SMTP_PORT,
+    SMTP_USERNAME: process.env.SMTP_USERNAME,
+    SMTP_PASSWORD: process.env.SMTP_PASSWORD,
+    FROM_EMAIL: process.env.FROM_EMAIL,
+    ADMIN_EMAIL: process.env.ADMIN_EMAIL,
 };
 
 export default constants;

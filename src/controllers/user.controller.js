@@ -435,18 +435,18 @@ const contactUs = asyncHandler(async (req, res, next) => {
         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
         
         <div style="text-align: center; color: #666; font-size: 14px;">
-            <p>This message was sent from the contact form at <strong>Brain-2xl</strong></p>
+            <p>This message was sent from the contact form at <strong>BrainXcel</strong></p>
             <p style="margin-top: 10px;">🕒 Received at: ${new Date().toLocaleString()}</p>
         </div>
         </div>
     
             <div style="text-align: center; color: #999; font-size: 12px; margin-top: 20px;">
-            <p>© ${new Date().getFullYear()} Brain-2xl. All rights reserved.</p>
+            <p>© ${new Date().getFullYear()} BrainXcel. All rights reserved.</p>
         </div>
         </div>
         `;
 
-        await sendEmail(email, "LMS : Contact Us", mailMessage);
+        await sendEmail(constants.ADMIN_EMAIL, "LMS : Contact Us", mailMessage);
 
         res.status(200).json(new ApiResponse("Message sent successfully"));
     } catch (error) {

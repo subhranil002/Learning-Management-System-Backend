@@ -19,9 +19,9 @@ const createCourse = asyncHandler(async (req, res, next) => {
                 400
             );
         }
-        if (description.length > 200 || description.length < 50) {
+        if (description.length < 50) {
             throw new ApiError(
-                "Description should be greater than 50 and less than 200 characters",
+                "Description should be greater than 50 characters",
                 400
             );
         }
@@ -236,6 +236,18 @@ const createLecture = asyncHandler(async (req, res, next) => {
         const { id } = req.params;
         if (!title || !description || !id) {
             throw new ApiError("All fields are required", 400);
+        }
+        if (title.length > 50 || title.length < 5) {
+            throw new ApiError(
+                "Title should be greater than 5 and less than 50 characters",
+                400
+            );
+        }
+        if (description.length < 50) {
+            throw new ApiError(
+                "Description should be greater than 50 characters",
+                400
+            );
         }
 
         const course = await Course.findById(id);

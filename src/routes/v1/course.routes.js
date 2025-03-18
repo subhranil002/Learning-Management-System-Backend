@@ -22,30 +22,30 @@ import upload from "../../middlewares/multer.middleware.js";
 
 courseRoutes
     .route("/create")
-    .post(isLoggedIn, authorizedRoles("ADMIN"), createCourse);
+    .post(isLoggedIn, authorizedRoles("TEACHER", "ADMIN"), createCourse);
 courseRoutes
     .route("/change-thumbnail/:id")
     .post(
         isLoggedIn,
-        authorizedRoles("ADMIN"),
+        authorizedRoles("TEACHER", "ADMIN"),
         upload.single("thumbnail"),
         changeThumbnail
     );
 courseRoutes
     .route("/update/:id")
-    .post(isLoggedIn, authorizedRoles("ADMIN"), updateCourse);
+    .post(isLoggedIn, authorizedRoles("TEACHER", "ADMIN"), updateCourse);
 courseRoutes
     .route("/delete/:id")
     .get(isLoggedIn, authorizedRoles("ADMIN"), removeCourse);
 courseRoutes.route("/").get(getAllCourses);
 courseRoutes
     .route("/:id/create")
-    .post(isLoggedIn, authorizedRoles("ADMIN"), createLecture);
+    .post(isLoggedIn, authorizedRoles("TEACHER", "ADMIN"), createLecture);
 courseRoutes
     .route("/:courseId/:lectureId")
     .post(
         isLoggedIn,
-        authorizedRoles("ADMIN"),
+        authorizedRoles("TEACHER", "ADMIN"),
         upload.single("lecture"),
         changeLectureVideo
     );
@@ -57,9 +57,9 @@ courseRoutes
     .get(isLoggedIn, authorizedSubscriber, viewLecture);
 courseRoutes
     .route("/:courseId/update/:lectureId")
-    .post(isLoggedIn, authorizedRoles("ADMIN"), updateLecture);
+    .post(isLoggedIn, authorizedRoles("TEACHER", "ADMIN"), updateLecture);
 courseRoutes
     .route("/:courseId/delete/:lectureId")
-    .get(isLoggedIn, authorizedRoles("ADMIN"), deleteLecture);
+    .get(isLoggedIn, authorizedRoles("TEACHER", "ADMIN"), deleteLecture);
 
 export default courseRoutes;

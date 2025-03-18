@@ -15,9 +15,9 @@ const getRazorpayApiKey = asyncHandler(async (req, res, next) => {
 const buySubscription = asyncHandler(async (req, res, next) => {
     try {
         const user = await User.findById(req.user._id);
-        if (user.role === "ADMIN") {
+        if (user.role === "TEACHER" || user.role === "ADMIN") {
             throw new ApiError(
-                "Admins are not allowed to purchase a subscription",
+                "Teachers and admins are not allowed to purchase a subscription",
                 403
             );
         }
@@ -69,8 +69,8 @@ const verifySubscription = asyncHandler(async (req, res, next) => {
         }
 
         const user = await User.findById(req.user._id);
-        if (user.role === "ADMIN") {
-            throw new ApiError("Admin cannot purchase a subscription", 403);
+        if (user.role === "TEACHER" || user.role === "ADMIN") {
+            throw new ApiError("Teachers and admins cannot purchase a subscription", 403);
         }
 
         const generatedSignature = crypto
@@ -105,8 +105,8 @@ const verifySubscription = asyncHandler(async (req, res, next) => {
 const cancelSubscription = asyncHandler(async (req, res, next) => {
     try {
         const user = await User.findById(req.user._id);
-        if (user.role === "ADMIN") {
-            throw new ApiError("Admin cannot purchase a subscription", 400);
+        if (user.role === "TEACHER" || user.role === "ADMIN") {
+            throw new ApiError("Teachers and admins cannot purchase a subscription", 400);
         }
         if (user.subscription.status !== "active") {
             throw new ApiError("User don't have a subscription", 400);

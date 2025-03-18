@@ -8,7 +8,6 @@ const userSchema = new Schema(
         fullName: {
             type: "String",
             required: [true, "Name is required"],
-            lowercase: true,
             trim: true,
         },
         email: {
@@ -38,7 +37,7 @@ const userSchema = new Schema(
         },
         role: {
             type: "String",
-            enum: ["USER", "ADMIN"],
+            enum: ["USER", "TEACHER", "ADMIN"],
             default: "USER",
         },
         forgotPasswordToken: String,
