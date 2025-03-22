@@ -91,8 +91,9 @@ const changeThumbnail = asyncHandler(async (req, res, next) => {
         }
 
         // Upload thumbnail to Cloudinary
-        const newThumbnail =
-            await fileHandler.uploadImageToCloud(thumbnailLocalPath);
+        const newThumbnail = await fileHandler.uploadImageToCloud(
+            thumbnailLocalPath
+        );
         if (!newThumbnail.public_id || !newThumbnail.secure_url) {
             throw new ApiError("Error uploading thumbnail", 400);
         }
@@ -307,6 +308,13 @@ const changeLectureVideo = asyncHandler(async (req, res, next) => {
             throw new ApiError("Lecture not found", 404);
         }
 
+        if (
+            req.user.role === "TEACHER" &&
+            req.user._id !== course.createdBy._id
+        ) {
+            throw new ApiError("Unauthorized request", 403);
+        }
+
         // Delete old lecture
         const result = await fileHandler.deleteCloudFile(
             lecture?.lecture?.public_id
@@ -316,8 +324,9 @@ const changeLectureVideo = asyncHandler(async (req, res, next) => {
         }
 
         // Upload lecture to Cloudinary
-        const newLecture =
-            await fileHandler.uploadVideoToCloud(lectureLocalPath);
+        const newLecture = await fileHandler.uploadVideoToCloud(
+            lectureLocalPath
+        );
         if (!newLecture.public_id || !newLecture.secure_url) {
             throw new ApiError("Error uploading lecture", 400);
         }
@@ -387,7 +396,12 @@ const getLecturesByCourseId = asyncHandler(async (req, res, next) => {
 const viewLecture = asyncHandler(async (req, res, next) => {
     try {
         const { courseId, lectureId } = req.params;
-        if (!courseId || !lectureId) {
+        if (
+            !courseId ||
+            courseId === "undefined" ||
+            !lectureId ||
+            lectureId === "undefined"
+        ) {
             throw new ApiError("Course ID and Lecture ID are required", 400);
         }
 
@@ -419,7 +433,13 @@ const viewLecture = asyncHandler(async (req, res, next) => {
 const updateLecture = asyncHandler(async (req, res, next) => {
     try {
         const { courseId, lectureId } = req.params;
-        if (!courseId || !lectureId) {
+
+        if (
+            !courseId ||
+            courseId === "undefined" ||
+            !lectureId ||
+            lectureId === "undefined"
+        ) {
             throw new ApiError("Course ID and Lecture ID are required", 400);
         }
 
@@ -433,6 +453,13 @@ const updateLecture = asyncHandler(async (req, res, next) => {
         );
         if (!lecture) {
             throw new ApiError("Lecture not found", 404);
+        }
+
+        if (
+            req.user.role === "TEACHER" &&
+            req.user._id !== course.createdBy._id
+        ) {
+            throw new ApiError("Unauthorized request", 403);
         }
 
         const { title, description } = req.body;
@@ -473,7 +500,12 @@ const updateLecture = asyncHandler(async (req, res, next) => {
 const deleteLecture = asyncHandler(async (req, res, next) => {
     try {
         const { courseId, lectureId } = req.params;
-        if (!courseId || !lectureId) {
+        if (
+            !courseId ||
+            courseId === "undefined" ||
+            !lectureId ||
+            lectureId === "undefined"
+        ) {
             throw new ApiError("Course ID and Lecture ID are required", 400);
         }
 
@@ -487,6 +519,13 @@ const deleteLecture = asyncHandler(async (req, res, next) => {
         );
         if (!lecture) {
             throw new ApiError("Lecture not found", 404);
+        }
+
+        if (
+            req.user.role === "TEACHER" &&
+            req.user._id !== course.createdBy._id
+        ) {
+            throw new ApiError("Unauthorized request", 403);
         }
 
         await fileHandler.deleteCloudFile(lecture?.lecture?.public_id);
