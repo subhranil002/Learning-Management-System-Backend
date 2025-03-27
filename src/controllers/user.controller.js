@@ -284,10 +284,64 @@ const forgotPassword = asyncHandler(async (req, res, next) => {
             .update(resetToken)
             .digest("hex");
         const forgotPasswordExpiry = Date.now() + 15 * 60 * 1000;
-        const resetPasswordUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+        const resetPasswordUrl = `${process.env.FRONTEND_URL}/resetpassword/${resetToken}`;
         const subject = "Reset Password";
-        const message = `You can reset your password by clicking <a href=${resetPasswordUrl} target="_blank">Reset your password</a>\nIf the above link does not work for some reason then copy paste this link in new tab ${resetPasswordUrl}.\n If you have not requested this, kindly ignore.`;
+        const message = `
+            <div style="max-width: 600px; margin: 20px auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333;">
+                <div style="padding: 25px; background: #f8f9fa; border-radius: 10px;">
+                    <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 25px;">
+                        Password Reset Request
+                    </h2>
+                    
+                    <p style="margin-bottom: 15px; line-height: 1.6;">
+                        We received a request to reset your password. Click the button below to 
+                        set up a new password for your account:
+                    </p>
 
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${resetPasswordUrl}" 
+                        style="background-color: #3498db; 
+                                color: white; 
+                                padding: 12px 25px;
+                                border-radius: 5px;
+                                text-decoration: none;
+                                font-weight: 500;
+                                display: inline-block;
+                                transition: background-color 0.3s;">
+                            Reset Password
+                        </a>
+                    </div>
+
+                    <p style="margin-bottom: 15px; line-height: 1.6;">
+                        If the button doesn't work, copy and paste this URL into your browser:
+                    </p>
+                    
+                    <div style="word-break: break-all; padding: 15px; 
+                        background: #ffffff; border: 1px solid #e0e0e0;
+                        border-radius: 5px; margin-bottom: 25px;">
+                        <code>${resetPasswordUrl}</code>
+                    </div>
+
+                    <div style="margin-top: 25px; padding-top: 15px; 
+                        border-top: 1px solid #eee; color: #666;
+                        font-size: 0.9em;">
+                        <p style="margin: 5px 0;">
+                            <strong>Security note:</strong> This link will expire in 15 Minutes.
+                            If you didn't request this password reset, please ignore this email 
+                            or contact our support team immediately.
+                        </p>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px; 
+                    color: #666; font-size: 0.85em;">
+                    <p>Sent with ❤️ from BrainXcel</p>
+                    <p>Need help? <a href=${process.env.FRONTEND_URL}/contact
+                                style="color: #3498db; text-decoration: none;">
+                                Contact Support</a></p>
+                </div>
+            </div>
+        `;
         await sendEmail(email, subject, message);
         await User.findByIdAndUpdate(user._id, {
             forgotPasswordToken,
@@ -296,7 +350,7 @@ const forgotPassword = asyncHandler(async (req, res, next) => {
 
         res.status(200).json({
             success: true,
-            message: `Reset password token has been sent to ${email} successfully`,
+            message: `Reset password link has been sent to ${email} successfully`,
         });
     } catch (error) {
         return next(

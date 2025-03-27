@@ -36,7 +36,7 @@ courseRoutes
     .post(isLoggedIn, authorizedRoles("TEACHER", "ADMIN"), updateCourse);
 courseRoutes
     .route("/delete/:id")
-    .get(isLoggedIn, authorizedRoles("ADMIN"), removeCourse);
+    .get(isLoggedIn, authorizedRoles("TEACHER", "ADMIN"), removeCourse);
 courseRoutes.route("/").get(getAllCourses);
 courseRoutes
     .route("/:id/create")
