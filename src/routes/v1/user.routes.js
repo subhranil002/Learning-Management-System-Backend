@@ -18,7 +18,7 @@ import upload from "../../middlewares/multer.middleware.js";
 
 userRoutes.route("/register").post(register);
 userRoutes.route("/login").post(login);
-userRoutes.route("/logout").get(logout);
+userRoutes.route("/logout").get(isLoggedIn, logout);
 userRoutes.route("/refresh-token").get(refreshAccessToken);
 userRoutes
     .route("/change-avatar")

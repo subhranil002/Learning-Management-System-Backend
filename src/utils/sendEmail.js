@@ -21,6 +21,10 @@ const sendEmail = async function (email, subject, message) {
             to: email,
             subject: subject,
             html: message,
+            headers: {
+                "X-Mailer": "BrainXcel Mail Service",
+                "X-Priority": "1",
+            },
         });
 
         // return boolean value

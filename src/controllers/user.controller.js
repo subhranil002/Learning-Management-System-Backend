@@ -38,22 +38,23 @@ const register = asyncHandler(async (req, res, next) => {
             );
         }
 
-        await user.save();
-
         const { accessToken, refreshToken } =
             await generateAccessAndRefreshToken(user);
+
+        user.refreshToken = refreshToken;
+        await user.save();
 
         res.cookie("accessToken", accessToken, {
             httpOnly: true,
             secure: true,
             sameSite: "None",
-            maxAge: 24 * 60 * 60 * 1000,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
             path: "/",
         }).cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: true,
             sameSite: "None",
-            maxAge: 24 * 60 * 60 * 1000,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
             path: "/",
         });
 
@@ -89,19 +90,23 @@ const login = asyncHandler(async (req, res, next) => {
         const { accessToken, refreshToken } =
             await generateAccessAndRefreshToken(user);
 
+        user.refreshToken = refreshToken;
+        await user.save();
+
+        user.refreshToken = undefined;
         user.password = undefined;
 
         res.cookie("accessToken", accessToken, {
             httpOnly: true,
             secure: true,
             sameSite: "None",
-            maxAge: 24 * 60 * 60 * 1000,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
             path: "/",
         }).cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: true,
             sameSite: "None",
-            maxAge: 24 * 60 * 60 * 1000,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
             path: "/",
         });
 
@@ -118,8 +123,12 @@ const login = asyncHandler(async (req, res, next) => {
     }
 });
 
-const logout = (req, res) => {
+const logout = asyncHandler(async (req, res, next) => {
     try {
+        const user = await User.findById(req.user._id);
+        user.refreshToken = undefined;
+        await user.save();
+
         res.clearCookie("accessToken", {
             httpOnly: true,
             secure: true,
@@ -141,7 +150,7 @@ const logout = (req, res) => {
             )
         );
     }
-};
+});
 
 const refreshAccessToken = asyncHandler(async (req, res, next) => {
     try {
@@ -169,17 +178,20 @@ const refreshAccessToken = asyncHandler(async (req, res, next) => {
         const { accessToken, refreshToken: newRefreshToken } =
             await generateAccessAndRefreshToken(user);
 
+        user.refreshToken = newRefreshToken;
+        await user.save();
+
         res.cookie("accessToken", accessToken, {
             httpOnly: true,
             secure: true,
             sameSite: "None",
-            maxAge: 24 * 60 * 60 * 1000,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
             path: "/",
         }).cookie("refreshToken", newRefreshToken, {
             httpOnly: true,
             secure: true,
             sameSite: "None",
-            maxAge: 24 * 60 * 60 * 1000,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
             path: "/",
         });
 
@@ -285,62 +297,78 @@ const forgotPassword = asyncHandler(async (req, res, next) => {
             .digest("hex");
         const forgotPasswordExpiry = Date.now() + 15 * 60 * 1000;
         const resetPasswordUrl = `${process.env.FRONTEND_URL}/resetpassword/${resetToken}`;
-        const subject = "Reset Password";
+        const subject = "Password Reset Request";
         const message = `
-            <div style="max-width: 600px; margin: 20px auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333;">
-                <div style="padding: 25px; background: #f8f9fa; border-radius: 10px;">
-                    <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 25px;">
-                        Password Reset Request
-                    </h2>
-                    
-                    <p style="margin-bottom: 15px; line-height: 1.6;">
-                        We received a request to reset your password. Click the button below to 
-                        set up a new password for your account:
-                    </p>
-
-                    <div style="text-align: center; margin: 30px 0;">
-                        <a href="${resetPasswordUrl}" 
-                        style="background-color: #3498db; 
-                                color: white; 
-                                padding: 12px 25px;
-                                border-radius: 5px;
-                                text-decoration: none;
-                                font-weight: 500;
-                                display: inline-block;
-                                transition: background-color 0.3s;">
-                            Reset Password
-                        </a>
-                    </div>
-
-                    <p style="margin-bottom: 15px; line-height: 1.6;">
-                        If the button doesn't work, copy and paste this URL into your browser:
-                    </p>
-                    
-                    <div style="word-break: break-all; padding: 15px; 
-                        background: #ffffff; border: 1px solid #e0e0e0;
-                        border-radius: 5px; margin-bottom: 25px;">
-                        <code>${resetPasswordUrl}</code>
-                    </div>
-
-                    <div style="margin-top: 25px; padding-top: 15px; 
-                        border-top: 1px solid #eee; color: #666;
-                        font-size: 0.9em;">
-                        <p style="margin: 5px 0;">
-                            <strong>Security note:</strong> This link will expire in 15 Minutes.
-                            If you didn't request this password reset, please ignore this email 
-                            or contact our support team immediately.
-                        </p>
-                    </div>
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width" />
+    </head>
+    <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif">
+        <div style="max-width: 600px; margin: 0 auto">
+            <div style="background: #ffffff; padding: 30px; border-radius: 8px">
+                <h2 style="color: #1a1a1a; margin-bottom: 25px">
+                    Password Reset Request
+                </h2>
+                <p style="color: #333; line-height: 1.6">
+                    We received a request to reset your password. Click the
+                    button below to set up a new password for your account:
+                </p>
+                <div style="text-align: center; margin: 30px 0">
+                    <a
+                        href=${resetPasswordUrl}
+                        style="
+                            background-color: #2563eb;
+                            color: #ffffff;
+                            padding: 12px 24px;
+                            border-radius: 6px;
+                            text-decoration: none;
+                            font-size: 16px;
+                            display: inline-block;
+                        "
+                    >
+                        Reset Password
+                    </a>
                 </div>
-                
-                <div style="text-align: center; margin-top: 20px; 
-                    color: #666; font-size: 0.85em;">
-                    <p>Sent with ❤️ from BrainXcel</p>
-                    <p>Need help? <a href=${process.env.FRONTEND_URL}/contact
-                                style="color: #3498db; text-decoration: none;">
-                                Contact Support</a></p>
+                <div
+                    style="
+                        margin-top: 25px;
+                        padding-top: 15px;
+                        border-top: 1px solid #eee;
+                        color: #666;
+                        font-size: 0.9em;
+                    "
+                >
+                    <p style="margin: 5px 0">
+                        <strong>Security note:</strong> This link will expire in
+                        15 Minutes. If you didn't request this password reset,
+                        please ignore this email or contact our support team
+                        immediately.
+                    </p>
+                </div>
+                <div
+                    style="
+                        text-align: center;
+                        margin-top: 20px;
+                        color: #666;
+                        font-size: 0.85em;
+                    "
+                >
+                    <p>
+                        Need help?
+                        <a
+                            href=${constants.FRONTEND_URL}/contact
+                            style="color: #3498db; text-decoration: none"
+                        >
+                            Contact Support
+                        </a>
+                    </p>
                 </div>
             </div>
+        </div>
+    </body>
+</html>
         `;
         await sendEmail(email, subject, message);
         await User.findByIdAndUpdate(user._id, {
@@ -490,7 +518,10 @@ const contactUs = asyncHandler(async (req, res, next) => {
         
         <div style="text-align: center; color: #666; font-size: 14px;">
             <p>This message was sent from the contact form at <strong>BrainXcel</strong></p>
-            <p style="margin-top: 10px;">🕒 Received at: ${new Date().toLocaleString()}</p>
+            <p style="margin-top: 10px;">🕒 Received at: ${new Date().toLocaleString(
+                "en-IN",
+                { timeZone: "Asia/Kolkata" }
+            )}</p>
         </div>
         </div>
     
@@ -500,7 +531,11 @@ const contactUs = asyncHandler(async (req, res, next) => {
         </div>
         `;
 
-        await sendEmail(constants.ADMIN_EMAIL, "LMS : Contact Us", mailMessage);
+        await sendEmail(
+            constants.ADMIN_EMAIL,
+            "BrainXcel : Contact Us",
+            mailMessage
+        );
 
         res.status(200).json(new ApiResponse("Message sent successfully"));
     } catch (error) {
