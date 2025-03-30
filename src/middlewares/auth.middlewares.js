@@ -49,7 +49,7 @@ const authorizedRoles =
         if (!roles.includes(req.user.role)) {
             return next(
                 new ApiError(
-                    "You do not have permission to access this resource",
+                    "You are not authorized to access this route",
                     403
                 )
             );

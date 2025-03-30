@@ -123,6 +123,32 @@ const login = asyncHandler(async (req, res, next) => {
     }
 });
 
+const guestLogin = asyncHandler(async (req, res, next) => {
+    try {
+        const user = await User.findById(constants.GUEST_ID);
+
+        const { accessToken } =
+            await generateAccessAndRefreshToken(user);
+
+        res.cookie("accessToken", accessToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "None",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            path: "/",
+        })
+
+        res.status(200).json(new ApiResponse("Logged in successfully", user));
+    } catch (error) {
+        return next(
+            new ApiError(
+                `user.controller :: login: ${error}`,
+                error.statusCode || 500
+            )
+        );
+    }
+});
+
 const logout = asyncHandler(async (req, res, next) => {
     try {
         const user = await User.findById(req.user._id);
@@ -551,6 +577,7 @@ const contactUs = asyncHandler(async (req, res, next) => {
 export {
     register,
     login,
+    guestLogin,
     logout,
     refreshAccessToken,
     changeAvatar,

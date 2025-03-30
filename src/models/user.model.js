@@ -37,7 +37,7 @@ const userSchema = new Schema(
         },
         role: {
             type: "String",
-            enum: ["VISITOR", "USER", "TEACHER", "ADMIN"],
+            enum: ["GUEST", "USER", "TEACHER", "ADMIN"],
             default: "USER",
         },
         forgotPasswordToken: String,

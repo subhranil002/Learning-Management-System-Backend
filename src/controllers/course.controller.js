@@ -310,7 +310,7 @@ const changeLectureVideo = asyncHandler(async (req, res, next) => {
 
         if (
             req.user.role === "TEACHER" &&
-            req.user._id !== course.createdBy._id
+            !req.user._id.equals(course.createdBy._id)
         ) {
             throw new ApiError("Unauthorized request", 403);
         }
@@ -457,7 +457,7 @@ const updateLecture = asyncHandler(async (req, res, next) => {
 
         if (
             req.user.role === "TEACHER" &&
-            req.user._id !== course.createdBy._id
+            !req.user._id.equals(course.createdBy._id)
         ) {
             throw new ApiError("Unauthorized request", 403);
         }
@@ -523,7 +523,7 @@ const deleteLecture = asyncHandler(async (req, res, next) => {
 
         if (
             req.user.role === "TEACHER" &&
-            req.user._id !== course.createdBy._id
+            !req.user._id.equals(course.createdBy._id)
         ) {
             throw new ApiError("Unauthorized request", 403);
         }
