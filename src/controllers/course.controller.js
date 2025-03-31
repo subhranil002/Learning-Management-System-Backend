@@ -9,8 +9,8 @@ import {
 
 const createCourse = asyncHandler(async (req, res, next) => {
     try {
-        const { title, description, category } = req.body;
-        if (!title || !description || !category) {
+        const { title, description, category, amount, currency } = req.body;
+        if (!title || !description || !category || !amount || !currency) {
             throw new ApiError("All fields are required", 400);
         }
         if (title.length > 50 || title.length < 5) {
@@ -43,6 +43,10 @@ const createCourse = asyncHandler(async (req, res, next) => {
             createdBy: {
                 name: req.user.fullName,
                 _id: req.user._id,
+            },
+            price: {
+                amount,
+                currency,
             },
         });
         if (!course) {
@@ -137,7 +141,7 @@ const updateCourse = asyncHandler(async (req, res, next) => {
             throw new ApiError("Course ID is required", 400);
         }
 
-        const { title, description, category } = req.body;
+        const { title, description, category, amount, currency } = req.body;
 
         const course = await Course.findById(id);
         if (!course) {
@@ -161,6 +165,9 @@ const updateCourse = asyncHandler(async (req, res, next) => {
         if (title) updatedFields.title = title;
         if (description) updatedFields.description = description;
         if (category) updatedFields.category = category;
+        if (amount || currency) updatedFields.price = {};
+        if (amount) updatedFields.price.amount = amount;
+        if (currency) updatedFields.price.currency = currency;
 
         const updatedCourse = await Course.findByIdAndUpdate(
             id,
@@ -370,12 +377,12 @@ const changeLectureVideo = asyncHandler(async (req, res, next) => {
 
 const getLecturesByCourseId = asyncHandler(async (req, res, next) => {
     try {
-        const { id } = req.params;
-        if (!id) {
+        const { courseId } = req.params;
+        if (!courseId) {
             throw new ApiError("Course ID is required", 400);
         }
 
-        const course = await Course.findById(id).select("lectures");
+        const course = await Course.findById(courseId).select("lectures");
         if (!course) {
             throw new ApiError("Invalid course ID", 404);
         }

@@ -48,25 +48,32 @@ const authorizedRoles =
     (req, res, next) => {
         if (!roles.includes(req.user.role)) {
             return next(
-                new ApiError(
-                    "You are not authorized to access this route",
-                    403
-                )
+                new ApiError("You are not authorized to access this route", 403)
             );
         }
 
         next();
     };
 
-const authorizedSubscriber = async (req, res, next) => {
+const authorizedUser = async (req, res, next) => {
     const subscription = req.user.subscription;
     const currentUserRole = req.user.role;
+    const courseId = req.params.courseId;
 
-    if (currentUserRole !== "TEACHER" && currentUserRole !== "ADMIN" && subscription.status !== "active") {
+    const alreadyPurchased = req.user.coursesPurchased.find(
+        (course) => course.toString() === courseId
+    );
+
+    if (
+        !alreadyPurchased &&
+        currentUserRole !== "TEACHER" &&
+        currentUserRole !== "ADMIN" &&
+        subscription.status !== "active"
+    ) {
         return next(new ApiError("Please subscribe to access this route", 400));
     }
 
     next();
 };
 
-export { isLoggedIn, authorizedRoles, authorizedSubscriber };
+export { isLoggedIn, authorizedRoles, authorizedUser };

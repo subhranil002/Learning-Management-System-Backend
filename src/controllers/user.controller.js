@@ -10,6 +10,7 @@ import {
 } from "../utils/index.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import { isBefore } from "date-fns";
 
 const register = asyncHandler(async (req, res, next) => {
     try {
@@ -110,9 +111,7 @@ const login = asyncHandler(async (req, res, next) => {
             path: "/",
         });
 
-        res.status(200).json(
-            new ApiResponse("User logged in successfully", user)
-        );
+        res.status(200).json(new ApiResponse("Logged in successfully", user));
     } catch (error) {
         return next(
             new ApiError(
@@ -127,8 +126,7 @@ const guestLogin = asyncHandler(async (req, res, next) => {
     try {
         const user = await User.findById(constants.GUEST_ID);
 
-        const { accessToken } =
-            await generateAccessAndRefreshToken(user);
+        const { accessToken } = await generateAccessAndRefreshToken(user);
 
         res.cookie("accessToken", accessToken, {
             httpOnly: true,
@@ -136,7 +134,7 @@ const guestLogin = asyncHandler(async (req, res, next) => {
             sameSite: "None",
             maxAge: 7 * 24 * 60 * 60 * 1000,
             path: "/",
-        })
+        });
 
         res.status(200).json(new ApiResponse("Logged in successfully", user));
     } catch (error) {
@@ -293,6 +291,21 @@ const changeAvatar = asyncHandler(async (req, res, next) => {
 
 const getProfile = asyncHandler(async (req, res, next) => {
     try {
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            throw new ApiError("User not found", 404);
+        }
+
+        if (
+            user.subscription.status === "active" &&
+            isBefore(user.subscription.expiresOn, new Date())
+        ) {
+            user.subscription.status = "completed";
+            user.subscription.expiresOn = null;
+            user.subscription.id = null;
+            await user.save();
+        }
+
         res.status(200).json(new ApiResponse("User profile", req.user));
     } catch (error) {
         return next(

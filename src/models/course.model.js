@@ -68,6 +68,17 @@ const courseSchema = new Schema(
                 ref: "User",
             },
         },
+        price: {
+            amount: {
+                type: Number,
+                required: [true, "Price is required"],
+            },
+            currency: {
+                type: String,
+                required: [true, "Currency is required"],
+                enum: ["INR", "USD", "EUR"],
+            },
+        },
     },
     {
         timestamps: true,

@@ -16,7 +16,7 @@ import {
 import {
     isLoggedIn,
     authorizedRoles,
-    authorizedSubscriber,
+    authorizedUser,
 } from "../../middlewares/auth.middlewares.js";
 import upload from "../../middlewares/multer.middleware.js";
 
@@ -50,11 +50,11 @@ courseRoutes
         changeLectureVideo
     );
 courseRoutes
-    .route("/:id")
-    .get(isLoggedIn, authorizedSubscriber, getLecturesByCourseId);
+    .route("/:courseId")
+    .get(isLoggedIn, authorizedUser, getLecturesByCourseId);
 courseRoutes
     .route("/:courseId/view/:lectureId")
-    .get(isLoggedIn, authorizedSubscriber, viewLecture);
+    .get(isLoggedIn, authorizedUser, viewLecture);
 courseRoutes
     .route("/:courseId/update/:lectureId")
     .post(isLoggedIn, authorizedRoles("TEACHER", "ADMIN"), updateLecture);

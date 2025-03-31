@@ -19,6 +19,7 @@ const constants = {
     RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
     RAZORPAY_SECRET: process.env.RAZORPAY_SECRET,
     RAZORPAY_PLAN_ID: process.env.RAZORPAY_PLAN_ID,
+    RAZORPAY_PLAN_DURATION_IN_DAYS: process.env.RAZORPAY_PLAN_DURATION_IN_DAYS,
     SMTP_HOST: process.env.SMTP_HOST,
     SMTP_PORT: process.env.SMTP_PORT,
     SMTP_USERNAME: process.env.SMTP_USERNAME,

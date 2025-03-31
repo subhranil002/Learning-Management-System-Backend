@@ -61,7 +61,16 @@ const userSchema = new Schema(
                 ],
                 default: "completed",
             },
+            expiresOn: {
+                type: Date,
+            },
         },
+        coursesPurchased: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "Course",
+            },
+        ],
         refreshToken: String,
     },
     {
