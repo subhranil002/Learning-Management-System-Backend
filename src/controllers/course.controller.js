@@ -221,9 +221,7 @@ const removeCourse = asyncHandler(async (req, res, next) => {
 
 const getAllCourses = asyncHandler(async (req, res, next) => {
     try {
-        const courses = await Course.find()
-            .select("-lectures")
-            .sort({ createdAt: -1 });
+        const courses = await Course.find().sort({ createdAt: -1 });
 
         res.status(200).json(
             new ApiResponse("Courses fetched successfully", courses)
@@ -334,7 +332,11 @@ const changeLectureVideo = asyncHandler(async (req, res, next) => {
         const newLecture = await fileHandler.uploadVideoToCloud(
             lectureLocalPath
         );
-        if (!newLecture.public_id || !newLecture.secure_url) {
+        if (
+            !newLecture.public_id ||
+            !newLecture.secure_url ||
+            !newLecture.playback_url
+        ) {
             throw new ApiError("Error uploading lecture", 400);
         }
 
@@ -345,6 +347,7 @@ const changeLectureVideo = asyncHandler(async (req, res, next) => {
                     lecture: {
                         public_id: newLecture.public_id,
                         secure_url: newLecture.secure_url,
+                        playback_url: newLecture.playback_url,
                     },
                 };
             }

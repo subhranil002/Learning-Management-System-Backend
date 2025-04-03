@@ -61,9 +61,9 @@ const register = asyncHandler(async (req, res, next) => {
 
         user.password = undefined;
 
-        res.status(201).json(
-            new ApiResponse("User registered successfully", user)
-        );
+        return res
+            .status(201)
+            .json(new ApiResponse("User registered successfully", user));
     } catch (error) {
         return next(
             new ApiError(
@@ -111,7 +111,9 @@ const login = asyncHandler(async (req, res, next) => {
             path: "/",
         });
 
-        res.status(200).json(new ApiResponse("Logged in successfully", user));
+        return res
+            .status(200)
+            .json(new ApiResponse("Logged in successfully", user));
     } catch (error) {
         return next(
             new ApiError(
@@ -136,7 +138,9 @@ const guestLogin = asyncHandler(async (req, res, next) => {
             path: "/",
         });
 
-        res.status(200).json(new ApiResponse("Logged in successfully", user));
+        return res
+            .status(200)
+            .json(new ApiResponse("Logged in successfully", user));
     } catch (error) {
         return next(
             new ApiError(
@@ -165,67 +169,13 @@ const logout = asyncHandler(async (req, res, next) => {
             path: "/",
         });
 
-        res.status(200).json(new ApiResponse("User logged out successfully"));
+        return res
+            .status(200)
+            .json(new ApiResponse("User logged out successfully"));
     } catch (error) {
         return next(
             new ApiError(
                 `user.controller :: logout: ${error}`,
-                error.statusCode || 500
-            )
-        );
-    }
-});
-
-const refreshAccessToken = asyncHandler(async (req, res, next) => {
-    try {
-        const { refreshToken } = req.cookies;
-        if (!refreshToken) {
-            throw new ApiError("Refresh token not found", 401);
-        }
-
-        const decodedRefreshToken = await jwt.verify(
-            refreshToken,
-            constants.REFRESH_TOKEN_SECRET,
-            (err, decoded) => {
-                if (err) {
-                    throw new ApiError("Refresh token is expired", 403);
-                }
-                return decoded;
-            }
-        );
-
-        const user = await User.findById(decodedRefreshToken?._id);
-        if (!user) {
-            throw new ApiError("User not found", 401);
-        }
-
-        const { accessToken, refreshToken: newRefreshToken } =
-            await generateAccessAndRefreshToken(user);
-
-        user.refreshToken = newRefreshToken;
-        await user.save();
-
-        res.cookie("accessToken", accessToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "None",
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-            path: "/",
-        }).cookie("refreshToken", newRefreshToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "None",
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-            path: "/",
-        });
-
-        res.status(200).json(
-            new ApiResponse("Access token refreshed successfully")
-        );
-    } catch (error) {
-        return next(
-            new ApiError(
-                `user.controller :: refreshAccessToken: ${error}`,
                 error.statusCode || 500
             )
         );
@@ -248,18 +198,19 @@ const changeAvatar = asyncHandler(async (req, res, next) => {
             throw new ApiError("Unauthorized request, please login again", 403);
         }
 
+        // Upload avatar to Cloudinary
+        const newAvatar = await fileHandler.uploadImageToCloud(avatarLocalPath);
+        if (!newAvatar.public_id || !newAvatar.secure_url) {
+            throw new ApiError("Error uploading avatar", 400);
+        }
+
         // Delete old avatar
         const result = await fileHandler.deleteCloudFile(
             user?.avatar?.public_id
         );
         if (!result) {
+            await fileHandler.deleteCloudFile(newAvatar.public_id);
             throw new ApiError("Error deleting old avatar", 400);
-        }
-
-        // Upload avatar to Cloudinary
-        const newAvatar = await fileHandler.uploadImageToCloud(avatarLocalPath);
-        if (!newAvatar.public_id || !newAvatar.secure_url) {
-            throw new ApiError("Error uploading avatar", 400);
         }
 
         // Update user with new avatar
@@ -306,7 +257,7 @@ const getProfile = asyncHandler(async (req, res, next) => {
             await user.save();
         }
 
-        res.status(200).json(new ApiResponse("User profile", req.user));
+        return res.status(200).json(new ApiResponse("User profile", req.user));
     } catch (error) {
         return next(
             new ApiError(
@@ -415,7 +366,7 @@ const forgotPassword = asyncHandler(async (req, res, next) => {
             forgotPasswordExpiry,
         });
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: `Reset password link has been sent to ${email} successfully`,
         });
@@ -454,7 +405,9 @@ const resetPassword = asyncHandler(async (req, res, next) => {
         user.forgotPasswordExpiry = undefined;
         await user.save();
 
-        res.status(200).json(new ApiResponse("Password reset successfully"));
+        return res
+            .status(200)
+            .json(new ApiResponse("Password reset successfully"));
     } catch (error) {
         return next(
             new ApiError(
@@ -480,7 +433,9 @@ const changePassword = asyncHandler(async (req, res, next) => {
         user.password = newPassword;
         await user.save();
 
-        res.status(200).json(new ApiResponse("Password changed successfully"));
+        return res
+            .status(200)
+            .json(new ApiResponse("Password changed successfully"));
     } catch (error) {
         return next(
             new ApiError(
@@ -506,9 +461,9 @@ const updateUser = asyncHandler(async (req, res, next) => {
         user.fullName = fullName;
         await user.save();
 
-        res.status(200).json(
-            new ApiResponse("User updated successfully", user)
-        );
+        return res
+            .status(200)
+            .json(new ApiResponse("User updated successfully", user));
     } catch (error) {
         return next(
             new ApiError(
@@ -576,7 +531,9 @@ const contactUs = asyncHandler(async (req, res, next) => {
             mailMessage
         );
 
-        res.status(200).json(new ApiResponse("Message sent successfully"));
+        return res
+            .status(200)
+            .json(new ApiResponse("Message sent successfully"));
     } catch (error) {
         return next(
             new ApiError(
@@ -592,7 +549,6 @@ export {
     login,
     guestLogin,
     logout,
-    refreshAccessToken,
     changeAvatar,
     getProfile,
     forgotPassword,

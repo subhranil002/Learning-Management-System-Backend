@@ -8,10 +8,10 @@ const errorMiddleware = (err, req, res, next) => {
         console.log("ErrorMiddleware: ", err);
 
         // Send error response
-        return res.status(statusCode).json({
+        return res.status(statusCode || 500).json({
             success: false,
-            message,
-            stack
+            message: message || "Something went wrong",
+            stack: stack || "",
         });
     }
 
@@ -27,9 +27,9 @@ const errorMiddleware = (err, req, res, next) => {
     }
 
     // Send error response
-    return res.status(statusCode).json({
+    return res.status(statusCode || 500).json({
         success: false,
-        message
+        message: message || "Something went wrong",
     });
 };
 

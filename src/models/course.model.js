@@ -17,7 +17,7 @@ const courseSchema = new Schema(
             trim: true,
         },
         category: {
-            type: String,
+            type: [String],
             required: [true, "Category is required"],
             trim: true,
         },
@@ -50,6 +50,9 @@ const courseSchema = new Schema(
                         type: String,
                     },
                     secure_url: {
+                        type: String,
+                    },
+                    playback_url: {
                         type: String,
                     },
                 },

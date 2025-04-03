@@ -38,11 +38,22 @@ const uploadImageToCloud = async (localFilePath) => {
         // Upload image
         const response = await cloudinary.uploader.upload(localFilePath, {
             resource_type: "image",
-            folder: constants.CLOUDINARY_IMAGE_FOLDER,
+            upload_preset: constants.CLOUDINARY_IMAGE_PRESET,
+            moderation: constants.CLOUDINARY_IMAGE_MODERATION,
         });
 
         // Delete local files
         await deleteLocalFiles();
+
+        if (
+            response?.moderation?.length > 0 &&
+            response?.moderation[0]?.status === "rejected"
+        ) {
+            throw new ApiError(
+                "This image is not safe to upload, please upload a different image",
+                400
+            );
+        }
 
         // Return public_id and secure_url
         return {
@@ -51,28 +62,25 @@ const uploadImageToCloud = async (localFilePath) => {
         };
     } catch (error) {
         await deleteLocalFiles();
-        throw new ApiError("Error while uploading image to Cloudinary", 500);
+        throw new ApiError(error.message, 500);
     }
 };
 
 const uploadVideoToCloud = async (localFilePath) => {
-    // Check if localFilePath is empty
     if (!localFilePath) return null;
 
     try {
-        // Upload video
         const response = await cloudinary.uploader.upload(localFilePath, {
             resource_type: "video",
-            folder: constants.CLOUDINARY_VIDEO_FOLDER,
+            upload_preset: constants.CLOUDINARY_VIDEO_PRESET,
         });
 
-        // Delete local files
         await deleteLocalFiles();
 
-        // Return public_id and secure_url
         return {
             public_id: response.public_id,
             secure_url: response.secure_url,
+            playback_url: response.playback_url,
         };
     } catch (error) {
         await deleteLocalFiles();
@@ -80,17 +88,19 @@ const uploadVideoToCloud = async (localFilePath) => {
     }
 };
 
-const deleteCloudFile = async (publicId) => {
+const deleteCloudFile = async (public_id) => {
     try {
-        // Check if publicId is empty
-        if (!publicId) return true;
+        if (!public_id) return true;
 
-        // Delete image from Cloudinary
-        await cloudinary.uploader.destroy(publicId);
+        const resource_type = public_id.split("_")[1].split("/")[0];
+
+        await cloudinary.uploader.destroy(public_id, {
+            resource_type: resource_type,
+        });
 
         return true;
     } catch (error) {
-        throw new ApiError("Error while deleting image from Cloudinary", 500);
+        throw new ApiError(error, 500);
     }
 };
 

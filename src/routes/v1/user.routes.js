@@ -10,7 +10,6 @@ import {
     resetPassword,
     changePassword,
     updateUser,
-    refreshAccessToken,
     changeAvatar,
     contactUs,
 } from "../../controllers/user.controller.js";
@@ -24,7 +23,6 @@ userRoutes.route("/register").post(register);
 userRoutes.route("/login").post(login);
 userRoutes.route("/guest-login").get(guestLogin);
 userRoutes.route("/logout").get(isLoggedIn, logout);
-userRoutes.route("/refresh-token").get(refreshAccessToken);
 userRoutes
     .route("/change-avatar")
     .post(
