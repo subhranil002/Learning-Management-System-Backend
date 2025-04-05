@@ -1,5 +1,6 @@
 import constants from "../constants.js";
-import { User } from "../models/index.js";
+import { Payment, User } from "../models/index.js";
+import { Course } from "../models/index.js";
 import {
     ApiError,
     ApiResponse,
@@ -8,7 +9,6 @@ import {
     fileHandler,
     generateAccessAndRefreshToken,
 } from "../utils/index.js";
-import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { isBefore } from "date-fns";
 
@@ -544,6 +544,84 @@ const contactUs = asyncHandler(async (req, res, next) => {
     }
 });
 
+const getMyCourses = asyncHandler(async (req, res, next) => {
+    try {
+        const courses = await Course.find({
+            _id: { $in: req.user.coursesPurchased },
+        });
+        if (!courses || courses.length === 0) {
+            return res
+                .status(200)
+                .json(new ApiResponse("You have not purchased any course yet"));
+        }
+
+        return res
+            .status(200)
+            .json(new ApiResponse("My Courses fetched successfully", courses));
+    } catch (error) {
+        return next(
+            new ApiError(
+                `user.controller :: getMyCourses: ${error}`,
+                error.statusCode || 500
+            )
+        );
+    }
+});
+
+const getMyPurchases = asyncHandler(async (req, res, next) => {
+    try {
+        const purchases = await Payment.aggregate([
+            {
+                $match: {
+                    purchasedBy: req.user._id,
+                },
+            },
+            {
+                $lookup: {
+                    from: "courses",
+                    localField: "coursePurchase.courseId",
+                    foreignField: "_id",
+                    as: "courseDetails",
+                },
+            },
+            {
+                $addFields: {
+                    "coursePurchase.courseTitle": {
+                        $arrayElemAt: ["$courseDetails.title", 0],
+                    },
+                },
+            },
+            {
+                $project: {
+                    courseDetails: 0,
+                    "coursePurchase.courseId": 0,
+                },
+            },
+            {
+                $sort: { createdAt: -1 },
+            },
+        ]);
+        if (!purchases || purchases.length === 0) {
+            return res
+                .status(200)
+                .json(new ApiResponse("You have not made any purchase yet"));
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse("My Purchases fetched successfully", purchases)
+            );
+    } catch (error) {
+        return next(
+            new ApiError(
+                `user.controller :: getMyCourses: ${error}`,
+                error.statusCode || 500
+            )
+        );
+    }
+});
+
 export {
     register,
     login,
@@ -556,4 +634,6 @@ export {
     changePassword,
     updateUser,
     contactUs,
+    getMyCourses,
+    getMyPurchases,
 };

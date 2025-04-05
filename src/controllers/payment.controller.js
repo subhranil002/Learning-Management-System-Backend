@@ -151,6 +151,7 @@ const verifySubscription = asyncHandler(async (req, res, next) => {
                 isPurchased: false,
             },
             subscriptionPurchase: true,
+            status: "Completed",
         });
 
         user.subscription.status = "active";
@@ -198,6 +199,15 @@ const cancelSubscription = asyncHandler(async (req, res, next) => {
         } catch (error) {
             throw new ApiError("Unable to cancel subscription", 500);
         }
+
+        await Payment.updateOne(
+            {
+                razorpay_subscription_id: user.subscription.id,
+            },
+            {
+                status: "Cancelled",
+            }
+        );
 
         user.subscription.status = cancel.status;
         user.subscription.expiresOn = null;
@@ -273,6 +283,7 @@ const verifyPayment = asyncHandler(async (req, res, next) => {
                 courseId,
             },
             subscriptionPurchase: false,
+            status: "Completed",
         });
 
         user.coursesPurchased.push(courseId);

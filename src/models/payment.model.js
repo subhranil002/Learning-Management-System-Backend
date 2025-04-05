@@ -42,6 +42,10 @@ const paymentSchema = new Schema(
             type: Boolean,
             default: false,
         },
+        status: {
+            type: String,
+            enum: ["Completed", "Cancelled"],
+        },
     },
     {
         timestamps: true,

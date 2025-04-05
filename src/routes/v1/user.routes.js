@@ -12,6 +12,8 @@ import {
     updateUser,
     changeAvatar,
     contactUs,
+    getMyCourses,
+    getMyPurchases,
 } from "../../controllers/user.controller.js";
 import {
     authorizedRoles,
@@ -45,5 +47,11 @@ userRoutes
     .route("/update")
     .post(isLoggedIn, authorizedRoles("USER", "TEACHER", "ADMIN"), updateUser);
 userRoutes.route("/contact").post(contactUs);
+userRoutes
+    .route("/getmycourses")
+    .get(isLoggedIn, authorizedRoles("USER", "GUEST"), getMyCourses);
+userRoutes
+    .route("/getmypurchases")
+    .get(isLoggedIn, authorizedRoles("USER", "GUEST"), getMyPurchases);
 
 export default userRoutes;
