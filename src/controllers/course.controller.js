@@ -56,9 +56,9 @@ const createCourse = asyncHandler(async (req, res, next) => {
             );
         }
 
-        res.status(200).json(
-            new ApiResponse("Course created successfully", course)
-        );
+        return res
+            .status(200)
+            .json(new ApiResponse("Course created successfully", course));
     } catch (error) {
         return next(
             new ApiError(
@@ -177,9 +177,11 @@ const updateCourse = asyncHandler(async (req, res, next) => {
             }
         ).select("-lectures");
 
-        res.status(200).json(
-            new ApiResponse("Course updated successfully", updatedCourse)
-        );
+        return res
+            .status(200)
+            .json(
+                new ApiResponse("Course updated successfully", updatedCourse)
+            );
     } catch (error) {
         return next(
             new ApiError(
@@ -208,7 +210,9 @@ const removeCourse = asyncHandler(async (req, res, next) => {
         });
         await Course.findByIdAndDelete(id);
 
-        res.status(200).json(new ApiResponse("Course removed successfully"));
+        return res
+            .status(200)
+            .json(new ApiResponse("Course removed successfully"));
     } catch (error) {
         return next(
             new ApiError(
@@ -221,11 +225,43 @@ const removeCourse = asyncHandler(async (req, res, next) => {
 
 const getAllCourses = asyncHandler(async (req, res, next) => {
     try {
-        const courses = await Course.find().sort({ createdAt: -1 });
+        const { start, limit, search_query } = req.query;
 
-        res.status(200).json(
-            new ApiResponse("Courses fetched successfully", courses)
-        );
+        let courses = [];
+
+        if (
+            search_query &&
+            search_query !== "undefined" &&
+            search_query !== ""
+        ) {
+            const regex = new RegExp(search_query, "i");
+            const filter = {
+                $or: [
+                    { title: { $regex: regex } },
+                    { description: { $regex: regex } },
+                    { category: { $in: [regex] } },
+                    { "createdBy.name": { $regex: regex } },
+                    { "lectures.title": { $regex: regex } },
+                    { "lectures.description": { $regex: regex } },
+                ],
+            };
+            courses = await Course.find(filter)
+                .skip(Number(0))
+                .limit(Number(8));
+        } else {
+            if ((start && isNaN(start)) || (limit && isNaN(limit))) {
+                throw new ApiError("Invalid query parameters", 400);
+            }
+
+            courses = await Course.find()
+                .sort({ createdAt: -1 })
+                .skip(Number(start))
+                .limit(Number(limit));
+        }
+
+        return res
+            .status(200)
+            .json(new ApiResponse("Courses fetched successfully", courses));
     } catch (error) {
         return next(
             new ApiError(
@@ -270,9 +306,9 @@ const createLecture = asyncHandler(async (req, res, next) => {
         course.lectures.push(lectureData);
         await course.save();
 
-        res.status(200).json(
-            new ApiResponse("Lecture created successfully", lectureData)
-        );
+        return res
+            .status(200)
+            .json(new ApiResponse("Lecture created successfully", lectureData));
     } catch (error) {
         return next(
             new ApiError(
@@ -390,9 +426,14 @@ const getLecturesByCourseId = asyncHandler(async (req, res, next) => {
             throw new ApiError("Invalid course ID", 404);
         }
 
-        res.status(200).json(
-            new ApiResponse("Lectures fetched successfully", course.lectures)
-        );
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    "Lectures fetched successfully",
+                    course.lectures
+                )
+            );
     } catch (error) {
         return next(
             new ApiError(
@@ -427,9 +468,9 @@ const viewLecture = asyncHandler(async (req, res, next) => {
             throw new ApiError("Lecture not found", 404);
         }
 
-        res.status(200).json(
-            new ApiResponse("Lecture fetched successfully", lecture)
-        );
+        return res
+            .status(200)
+            .json(new ApiResponse("Lecture fetched successfully", lecture));
     } catch (error) {
         return next(
             new ApiError(
@@ -489,7 +530,7 @@ const updateLecture = asyncHandler(async (req, res, next) => {
             { new: true }
         );
 
-        res.status(200).json(
+        return res.status(200).json(
             new ApiResponse(
                 "Lecture updated successfully",
                 updatedCourse.lectures.find(
@@ -544,9 +585,11 @@ const deleteLecture = asyncHandler(async (req, res, next) => {
         );
         await course.save();
 
-        res.status(200).json(
-            new ApiResponse("Lecture deleted successfully", course.lectures)
-        );
+        return res
+            .status(200)
+            .json(
+                new ApiResponse("Lecture deleted successfully", course.lectures)
+            );
     } catch (error) {
         return next(
             new ApiError(
