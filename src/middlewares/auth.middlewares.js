@@ -7,7 +7,8 @@ const refreshAccessToken = async (req, res, next) => {
     try {
         const { refreshToken } = req.cookies;
         if (!refreshToken) {
-            throw new ApiError("Refresh token not found", 401);
+            // throw new ApiError("Refresh token not found", 455);
+            throw new ApiError("Session expired! Please login again", 455);
         }
 
         const decodedRefreshToken = jwt.verify(
@@ -17,7 +18,7 @@ const refreshAccessToken = async (req, res, next) => {
                 if (err) {
                     throw new ApiError(
                         "Session expired! Please login again",
-                        403
+                        455
                     );
                 }
                 return decoded;
@@ -26,10 +27,10 @@ const refreshAccessToken = async (req, res, next) => {
 
         const user = await User.findById(decodedRefreshToken?._id);
         if (!user) {
-            throw new ApiError("User not found", 401);
+            throw new ApiError("User not found", 455);
         }
         if (user.refreshToken !== refreshToken) {
-            throw new ApiError("Session expired! Please login again", 403);
+            throw new ApiError("Session expired! Please login again", 455);
         }
 
         const { accessToken, refreshToken: newRefreshToken } =
@@ -69,7 +70,8 @@ const isLoggedIn = async (req, res, next) => {
         // Get access token from request
         const { accessToken } = req.cookies;
         if (!accessToken) {
-            throw new ApiError("Access token not found", 401);
+            // throw new ApiError("Access token not found", 455);
+            throw new ApiError("Please login to continue", 455);
         }
 
         // Check if access token is valid
@@ -79,7 +81,7 @@ const isLoggedIn = async (req, res, next) => {
                 constants.ACCESS_TOKEN_SECRET,
                 (err, decoded) => {
                     if (err) {
-                        throw new ApiError("Access token is expired", 401);
+                        throw new ApiError("Access token is expired", 455);
                     }
                     return decoded;
                 }
@@ -88,7 +90,7 @@ const isLoggedIn = async (req, res, next) => {
             // Check if user is verified
             const user = await User.findById(decodedAccessToken?._id);
             if (!user) {
-                throw new ApiError("User not found", 401);
+                throw new ApiError("User not found", 455);
             }
 
             // Set user in request
