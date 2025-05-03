@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import { ApiError, generateAccessAndRefreshToken } from "../utils/index.js";
 import constants from "../constants.js";
 import { User } from "../models/index.js";
+import rateLimit from "express-rate-limit";
 
 const refreshAccessToken = async (req, res, next) => {
     try {
@@ -143,4 +144,14 @@ const authorizedUser = async (req, res, next) => {
     next();
 };
 
-export { isLoggedIn, authorizedRoles, authorizedUser };
+const limiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 30,
+    message: {
+        success: false,
+        message: "Too many requests, please try again later.",
+        data: {},
+    },
+});
+
+export { isLoggedIn, authorizedRoles, authorizedUser, limiter };

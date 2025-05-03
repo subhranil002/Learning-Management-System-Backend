@@ -3,6 +3,8 @@ import constants from "./constants.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
+import helmet from "helmet";
+import { limiter } from "./middlewares/auth.middlewares.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import {
     healthCheckRoutes as v1_healthCheckRoutes,
@@ -14,6 +16,7 @@ import {
 const app = express();
 
 // Middleware
+app.use(limiter);
 app.use(express.json());
 app.use(
     express.urlencoded({
@@ -29,6 +32,7 @@ app.use(
 app.use(cookieParser());
 app.use(express.static("public"));
 app.use(morgan("dev"));
+app.use(helmet());
 
 app.use("/api/v1/healthcheck", v1_healthCheckRoutes);
 app.use("/api/v1/users", v1_userRoutes);
