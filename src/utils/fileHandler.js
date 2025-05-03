@@ -38,7 +38,6 @@ const uploadImageToCloud = async (localFilePath) => {
         // Upload image
         const response = await cloudinary.uploader.upload(localFilePath, {
             resource_type: "image",
-            upload_preset: constants.CLOUDINARY_IMAGE_PRESET,
             moderation: constants.CLOUDINARY_IMAGE_MODERATION,
         });
 
@@ -72,15 +71,24 @@ const uploadVideoToCloud = async (localFilePath) => {
     try {
         const response = await cloudinary.uploader.upload(localFilePath, {
             resource_type: "video",
-            upload_preset: constants.CLOUDINARY_VIDEO_PRESET,
+            folder: "lms_video",
+            eager: [
+                {
+                    streaming_profile: "sd",
+                    format: "m3u8",
+                },
+            ],
+            eager_async: true,
         });
 
         await deleteLocalFiles();
 
+        console.log(response);
+
         return {
             public_id: response.public_id,
             secure_url: response.secure_url,
-            playback_url: response.playback_url,
+            playback_url: response.eager[0].secure_url,
         };
     } catch (error) {
         await deleteLocalFiles();
